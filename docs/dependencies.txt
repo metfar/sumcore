@@ -1,0 +1,41 @@
+
+# SUM Ecosystem
+
+sumCore
+ ├── sumData
+ └── sumPlot
+      └── sumR / sumPY
+
+sumUI
+ ├── sumPlot
+ ├── sumGUI
+ └── sumTUI
+      └── sumIDE
+           └── sumX
+                └── sumBASIC
+
+
+# Install all
+
+pip install ./sumcore-0.1.0a1-py3-none-any.whl
+pip install ./sumui-0.1.0a11-py3-none-any.whl
+
+pip install ./sumdata-0.1.0a1-py3-none-any.whl
+pip install ./sumplot-0.1.0a1-py3-none-any.whl
+
+pip install ./sumgui-0.2.0a13-py3-none-any.whl
+pip install ./sumtui-0.8.0a11-py3-none-any.whl
+
+pip install ./sumr-0.1.0a1-py3-none-any.whl
+pip install ./sumpy-0.1.0a1-py3-none-any.whl
+
+pip install ./sumide-0.2.17-py3-none-any.whl
+pip install ./sumx-0.2.16-py3-none-any.whl
+pip install ./sumbasic-0.2.15-py3-none-any.whl
+
+pip install ./sumdiff-0.2.8-py3-none-any.whl
+pip install ./sumdoc-0.2.3-py3-none-any.whl
+
+
+<p align=center><b>- oOo -</b></p>
+
