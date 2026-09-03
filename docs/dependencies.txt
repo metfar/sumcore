@@ -1,6 +1,26 @@
 
+
 # SUM Ecosystem
 
+## Install order
+
+1. sumCore
+2. sumUI
+3. sumData
+4. sumPlot
+5. sumGUI
+6. sumTUI
+7. sumR
+8. sumPY
+9. sumIDE
+10. sumX
+11. sumBASIC
+12. sumdiff
+13. sumdoc
+
+# SUM Tree
+
+<code><pre>
 sumCore
  ├── sumData
  └── sumPlot
@@ -13,10 +33,11 @@ sumUI
       └── sumIDE
            └── sumX
                 └── sumBASIC
-
+</pre></code>
 
 # Install all
 
+<code><pre>
 pip install ./sumcore-0.1.0a1-py3-none-any.whl
 pip install ./sumui-0.1.0a11-py3-none-any.whl
 
@@ -35,7 +56,7 @@ pip install ./sumbasic-0.2.15-py3-none-any.whl
 
 pip install ./sumdiff-0.2.8-py3-none-any.whl
 pip install ./sumdoc-0.2.3-py3-none-any.whl
-
+</pre></code>
 
 <p align=center><b>- oOo -</b></p>
 
