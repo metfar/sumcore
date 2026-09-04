@@ -20,5 +20,6 @@
 #  MA 02110-1301, USA.
 #  
 from .architecture import DEFAULT_ARCHITECTURE, write_architecture_artifacts;
-__version__ = "0.1.0a2";
-__all__ = ["DEFAULT_ARCHITECTURE", "write_architecture_artifacts"];
+from .compat import FALSE_ALIASES, NULL_ALIASES, TRUE_ALIASES, basic_boolean, is_null_alias, truth_alias;
+__version__ = "0.1.0a3";
+__all__ = ["DEFAULT_ARCHITECTURE", "write_architecture_artifacts", "TRUE_ALIASES", "FALSE_ALIASES", "NULL_ALIASES", "truth_alias", "is_null_alias", "basic_boolean"];
