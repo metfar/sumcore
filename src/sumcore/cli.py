@@ -19,6 +19,10 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 #  
-from .architecture import DEFAULT_ARCHITECTURE, write_architecture_artifacts;
-__version__ = "0.1.0a2";
-__all__ = ["DEFAULT_ARCHITECTURE", "write_architecture_artifacts"];
+import argparse;
+from . import __version__;
+
+def main(argv=None):
+    parser=argparse.ArgumentParser(prog="sumcore",description="SUM core architecture package.");
+    parser.add_argument("--version",action="version",version="sumcore {}".format(__version__));
+    parser.parse_args(argv); parser.print_help(); return 0;

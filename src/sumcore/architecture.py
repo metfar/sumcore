@@ -24,14 +24,14 @@ import argparse;
 import csv;
 
 DEFAULT_ARCHITECTURE = {
-    "sumCore": {"version":"0.1.0a1", "requires":[], "optional":[], "role":"core architecture and registries"},
-    "sumData": {"version":"0.1.0a1", "requires":["sumCore"], "optional":["pyreadr"], "role":"common data objects, datasets and RDS"},
-    "sumPlot": {"version":"0.1.0a1", "requires":["sumCore","sumUI"], "optional":["matplotlib","seaborn"], "role":"plot semantics and PlotSpec"},
-    "sumR": {"version":"0.1.0a1", "requires":["sumCore","sumData","sumPlot"], "optional":["Rscript"], "role":"R-compatible runtime"},
-    "sumPY": {"version":"0.1.0a1", "requires":["sumCore","sumData","sumPlot"], "optional":[], "role":"Python SUM runtime"},
+    "sumCore": {"version":"0.1.0a2", "requires":[], "optional":[], "role":"core architecture and registries"},
+    "sumData": {"version":"0.1.0a2", "requires":["sumCore"], "optional":["pyreadr"], "role":"common data objects, datasets and RDS"},
+    "sumPlot": {"version":"0.1.0a2", "requires":["sumCore","sumUI"], "optional":["matplotlib","seaborn"], "role":"plot semantics and PlotSpec"},
+    "sumR": {"version":"0.1.0a2", "requires":["sumCore","sumData","sumPlot"], "optional":["Rscript"], "role":"R-compatible runtime"},
+    "sumPY": {"version":"0.1.0a2", "requires":["sumCore","sumData","sumPlot"], "optional":[], "role":"Python SUM runtime"},
     "sumUI": {"version":"0.1.0a11", "requires":[], "optional":[], "role":"backend-neutral UI contracts"},
     "sumTUI": {"version":"0.8.0a11", "requires":["sumUI"], "optional":["sumGUI"], "role":"terminal presentation"},
-    "sumGUI": {"version":"0.2.0a13", "requires":["sumUI"], "optional":["matplotlib","seaborn"], "role":"Pygame presentation"},
+    "sumGUI": {"version":"0.2.0a14", "requires":["sumUI"], "optional":["matplotlib","seaborn"], "role":"Pygame presentation"},
     "sumIDE": {"version":"0.2.17", "requires":["sumUI","sumTUI"], "optional":["sumGUI","sumR","sumPY"], "role":"common multi-language IDE"},
     "sumBASIC": {"version":"0.2.15", "requires":["sumUI","sumTUI","sumIDE","sumData","sumPlot"], "optional":["sumGUI"], "role":"BASIC runtime"},
     "sumX": {"version":"0.2.16", "requires":["sumUI","sumTUI","sumIDE","sumData"], "optional":["sumGUI"], "role":"xBase runtime"},
@@ -59,9 +59,9 @@ def write_architecture_artifacts(directory="."):
         writer=csv.writer(handle); writer.writerow(("package","version","requires","optional","role")); writer.writerows(rows);
     md=["# SUM ecosystem command/dependency matrix", "", "| Package | Version | Required | Optional | Role |", "|---|---|---|---|---|"];
     for row in rows: md.append("| {} | {} | {} | {} | {} |".format(*row));
-    (out/"SUM_COMMAND_MATRIX.md").write_text("\n".join(md)+"\n");
+    md += ["", "<p align=center><b>- oOo -</b></p>"]; (out/"SUM_COMMAND_MATRIX.md").write_text("\n".join(md)+"\n");
     mapmd=["# SUM ecosystem architecture", "", "```text", "sumCore", "|- sumData --> sumR / sumPY / sumBASIC / sumX", "|- sumPlot --> sumR / sumPY / sumBASIC", "`- sumUI --> sumTUI / sumGUI --> sumIDE", "```", "", "Solid dependencies are required; GUI and external renderers are optional."];
-    (out/"SUM_ECOSYSTEM_MAP.md").write_text("\n".join(mapmd)+"\n");
+    mapmd += ["", "<p align=center><b>- oOo -</b></p>"]; (out/"SUM_ECOSYSTEM_MAP.md").write_text("\n".join(mapmd)+"\n");
     width=900; height=520;
     names=list(DEFAULT_ARCHITECTURE); coords={};
     columns=[["sumCore"],["sumData","sumPlot","sumUI"],["sumR","sumPY","sumTUI","sumGUI"],["sumIDE","sumBASIC","sumX","sumdiff","sumdoc"]];
@@ -82,4 +82,5 @@ def write_architecture_artifacts(directory="."):
     return tuple(out/name for name in ("SUM_ARCHITECTURE.yaml","SUM_ECOSYSTEM_MAP.svg","SUM_ECOSYSTEM_MAP.md","SUM_COMMAND_MATRIX.md","SUM_COMMAND_MATRIX.csv"));
 
 def main(argv=None):
-    parser=argparse.ArgumentParser(); parser.add_argument("directory", nargs="?", default="."); args=parser.parse_args(argv); write_architecture_artifacts(args.directory); return 0;
+    from . import __version__;
+    parser=argparse.ArgumentParser(prog="sum-architecture"); parser.add_argument("--version",action="version",version="sum-architecture {}".format(__version__)); parser.add_argument("directory", nargs="?", default="."); args=parser.parse_args(argv); write_architecture_artifacts(args.directory); return 0;
