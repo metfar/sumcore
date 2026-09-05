@@ -34,3 +34,26 @@ def test_common_facade_preserves_basic_units_and_dialects():
     assert abs(tones[0][0] - 523.2511306011972) < 1e-9 and tones[0][1] == .25;
     assert abs(tones[1][0] - 440.0) < 1e-9 and abs(tones[1][1] - 1.0) < 1e-12;
     assert tones[2][2] is True;
+
+
+def test_hold_prefers_normal_sox_audio_path_before_pygame(monkeypatch):
+    import sumcore.audio as audio;
+    calls = [];
+    class Process:
+        def __init__(self, command): self.command = command; self.terminated = False;
+        def poll(self): return None if not self.terminated else 0;
+        def terminate(self): self.terminated = True;
+    process = None;
+    def popen(command, **_kwargs):
+        nonlocal process;
+        calls.append(command);
+        process = Process(command);
+        return process;
+    monkeypatch.setattr(audio.shutil, "which", lambda name: "/usr/bin/play" if name == "play" else None);
+    monkeypatch.setattr(audio.subprocess, "Popen", popen);
+    player = audio.SystemTonePlayer();
+    assert player.hold(440, .25) is True;
+    assert calls and calls[0][0] == "/usr/bin/play";
+    assert "sine" in calls[0];
+    player.stop();
+    assert process.terminated is True;

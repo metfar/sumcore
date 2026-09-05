@@ -91,6 +91,8 @@ class SystemTonePlayer:
         self._hold_channel = None;
         self._hold_sound = None;
         self._hold_process = None;
+        self._hold_stop_event = None;
+        self._hold_thread = None;
 
     def _ensure_worker(self):
         with self._worker_lock:
@@ -120,21 +122,71 @@ class SystemTonePlayer:
         if channel is not None:
             try: channel.stop();
             except Exception: pass;
+        hold_stop_event = self._hold_stop_event;
+        self._hold_stop_event = None;
+        if hold_stop_event is not None: hold_stop_event.set();
         hold_process = self._hold_process;
         self._hold_process = None;
         if hold_process is not None:
             try:
                 if hold_process.poll() is None: hold_process.terminate();
             except Exception: pass;
+        self._hold_thread = None;
         return None;
 
     def hold(self, frequency, volume=1.0):
-        """Start one cancellable continuous sine on the existing tone backend.""";
+        """Start one cancellable continuous sine using the normal audio path.
+
+        Prefer the same external renderers used by finite tones.  This avoids a
+        subtle Linux failure mode where Pygame successfully allocates a mixer
+        channel but that channel is not connected to the active desktop audio
+        device while SoX/aplay are.  Pygame remains a portable fallback.
+        """;
         self.stop();
+        frequency = float(frequency);
+        volume = max(0.0, min(1.0, float(volume)));
+        player = shutil.which("play");
+        if player:
+            try:
+                self._hold_process = subprocess.Popen(
+                    [player, "-q", "-v", "{:.4f}".format(volume), "-n", "synth", "sine", "{:.6f}".format(frequency)],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                );
+                return True;
+            except OSError:
+                self._hold_process = None;
+        aplay = shutil.which("aplay");
+        if aplay:
+            try:
+                process = subprocess.Popen(
+                    [aplay, "-q", "-t", "raw", "-f", "S16_LE", "-c", "1", "-r", str(self.sample_rate), "-"],
+                    stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                );
+                stop_event = threading.Event();
+                self._hold_process = process;
+                self._hold_stop_event = stop_event;
+                chunk = self._pcm_bytes(frequency, .10, volume);
+                def feed_hold():
+                    try:
+                        while not stop_event.is_set() and process.poll() is None:
+                            process.stdin.write(chunk);
+                            process.stdin.flush();
+                    except (BrokenPipeError, OSError, ValueError):
+                        pass;
+                    finally:
+                        try: process.stdin.close();
+                        except Exception: pass;
+                thread = threading.Thread(target=feed_hold, name="sumCore-audio-hold", daemon=True);
+                self._hold_thread = thread;
+                thread.start();
+                return True;
+            except OSError:
+                self._hold_process = None;
+                self._hold_stop_event = None;
         try:
-            # Pygame is only the output device here; samples still come from
-            # sumBASIC's SystemTonePlayer.  Silence its import banner/warnings
-            # so a text program never has its screen corrupted by the backend.
+            # Pygame is only an output device here; samples still come from
+            # SystemTonePlayer. Silence its import banner/warnings so a text
+            # program never has its screen corrupted by the backend.
             with warnings.catch_warnings(), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 warnings.simplefilter("ignore");
                 import pygame;
@@ -142,22 +194,10 @@ class SystemTonePlayer:
             sound = pygame.mixer.Sound(file=io.BytesIO(self._wav_bytes(frequency, 1.0, volume)));
             self._hold_channel = sound.play(loops=-1);
             if self._hold_channel is not None:
-                # Keep the Sound alive: releasing it also releases its channel
-                # on some SDL_mixer/Pygame builds.
                 self._hold_sound = sound;
                 return True;
         except Exception:
             pass;
-        player = shutil.which("play");
-        if player:
-            try:
-                self._hold_process = subprocess.Popen(
-                    [player, "-q", "-v", "{:.4f}".format(volume), "-n", "synth", "sine", "{:.6f}".format(float(frequency))],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                );
-                return True;
-            except OSError:
-                self._hold_process = None;
         return False;
 
     def play(self, frequency, duration, blocking=True, volume=1.0):
@@ -252,19 +292,23 @@ class SystemTonePlayer:
             cancel_event.wait(duration);
         return False;
 
-    def _wav_bytes(self, frequency, duration, volume=1.0):
+    def _pcm_bytes(self, frequency, duration, volume=1.0):
         count = max(1, int(round(self.sample_rate * float(duration))));
         amplitude = int(11000 * max(0.0, min(1.0, float(volume))));
         frames = bytearray();
         for index in range(count):
             sample = int(amplitude * math.sin((2.0 * math.pi * float(frequency) * index) / self.sample_rate));
             frames.extend(struct.pack("<h", sample));
+        return bytes(frames);
+
+    def _wav_bytes(self, frequency, duration, volume=1.0):
+        frames = self._pcm_bytes(frequency, duration, volume);
         stream = io.BytesIO();
         with wave.open(stream, "wb") as wav:
             wav.setnchannels(1);
             wav.setsampwidth(2);
             wav.setframerate(self.sample_rate);
-            wav.writeframes(bytes(frames));
+            wav.writeframes(frames);
         return stream.getvalue();
 
 
@@ -609,7 +653,15 @@ class MusicEngine:
             if old_timer is not None: old_timer.cancel();
             if not same:
                 for player in self._channel_players: player.stop();
-                self._channel_players[0].hold(event.frequency, event.volume * self.output_volume);
+                volume = event.volume * self.output_volume;
+                held = self._channel_players[0].hold(event.frequency, volume);
+                if not held:
+                    # Last-resort compatibility path: if the continuous backend
+                    # cannot open, use the same finite tone renderer that BEEP/
+                    # normal PLAY already proved usable.  The safety timeout
+                    # bounds the note and PLAY STOP can still cancel it.
+                    fallback_duration = max(.05, timeout if timeout > 0.0 else 1.0);
+                    self._channel_players[0].play(event.frequency, fallback_duration, False, volume);
                 self._hold_signature = signature;
             if timeout > 0.0:
                 expected = signature;
