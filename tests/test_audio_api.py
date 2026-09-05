@@ -19,9 +19,18 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 #  
-from .architecture import DEFAULT_ARCHITECTURE, write_architecture_artifacts;
-from .compat import FALSE_ALIASES, NULL_ALIASES, TRUE_ALIASES, basic_boolean, is_null_alias, truth_alias;
-from .audio import AudioEngine;
-from .audio_api import audio_engine, beep, play, set_audio_engine, sound, stop_audio, wait_audio;
-__version__ = "0.1.0a4";
-__all__ = ["DEFAULT_ARCHITECTURE", "write_architecture_artifacts", "TRUE_ALIASES", "FALSE_ALIASES", "NULL_ALIASES", "truth_alias", "is_null_alias", "basic_boolean", "AudioEngine", "audio_engine", "beep", "play", "set_audio_engine", "sound", "stop_audio", "wait_audio"];
+
+from sumcore.audio import AudioEngine;
+from sumcore.audio_api import beep, play, set_audio_engine, sound;
+
+
+def test_common_facade_preserves_basic_units_and_dialects():
+    tones = [];
+    engine = AudioEngine(tone_func=lambda frequency, duration, blocking, volume=1.0: tones.append((frequency, duration, blocking, volume)));
+    set_audio_engine(engine);
+    beep(.25, 12, volume=.4);
+    sound(440, 18.2, volume=.5);
+    play("T240O4c", volume=.6);
+    assert abs(tones[0][0] - 523.2511306011972) < 1e-9 and tones[0][1] == .25;
+    assert abs(tones[1][0] - 440.0) < 1e-9 and abs(tones[1][1] - 1.0) < 1e-12;
+    assert tones[2][2] is True;

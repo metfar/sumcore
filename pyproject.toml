@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sumcore"
-version = "0.1.0a3"
+version = "0.1.0a4"
 description = "Core architecture, registry and release metadata for the Sum ecosystem."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -16,6 +16,9 @@ classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Pytho
 [project.scripts]
 sumcore = "sumcore.cli:main"
 sum-architecture = "sumcore.architecture:main"
+sumbeep = "sumcore.audio_cli:main_beep"
+sumplay = "sumcore.audio_cli:main_play"
+sumsound = "sumcore.audio_cli:main_sound"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
