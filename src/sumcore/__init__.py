@@ -23,5 +23,5 @@ from .architecture import DEFAULT_ARCHITECTURE, write_architecture_artifacts;
 from .compat import FALSE_ALIASES, NULL_ALIASES, TRUE_ALIASES, basic_boolean, is_null_alias, truth_alias;
 from .audio import AudioEngine;
 from .audio_api import audio_engine, beep, play, set_audio_engine, sound, stop_audio, wait_audio;
-__version__ = "0.1.0a6";
+__version__ = "0.1.0a7";
 __all__ = ["DEFAULT_ARCHITECTURE", "write_architecture_artifacts", "TRUE_ALIASES", "FALSE_ALIASES", "NULL_ALIASES", "truth_alias", "is_null_alias", "basic_boolean", "AudioEngine", "audio_engine", "beep", "play", "set_audio_engine", "sound", "stop_audio", "wait_audio"];

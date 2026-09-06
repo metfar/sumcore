@@ -29,6 +29,7 @@ import shutil;
 import struct;
 import subprocess;
 import sys;
+import tempfile;
 import threading;
 import time;
 import wave;
@@ -95,6 +96,8 @@ class SystemTonePlayer:
         self._hold_stop_event = None;
         self._hold_thread = None;
         self._hold_backend = None;
+        self._termux_media_file = None;
+        self._termux_media_lock = threading.Lock();
 
     def _ensure_worker(self):
         with self._worker_lock:
@@ -148,6 +151,13 @@ class SystemTonePlayer:
                 try:
                     if hold_process.poll() is None: hold_process.terminate();
                 except Exception: pass;
+        with self._termux_media_lock:
+            termux_media_file = self._termux_media_file;
+            self._termux_media_file = None;
+        if termux_media_file is not None:
+            self._termux_media_stop();
+            try: os.unlink(termux_media_file);
+            except OSError: pass;
         return None;
 
     @staticmethod
@@ -159,6 +169,88 @@ class SystemTonePlayer:
             return pygame;
         except Exception:
             return None;
+
+    @staticmethod
+    def _is_termux_environment():
+        prefix = str(os.environ.get("PREFIX", ""));
+        return bool(os.environ.get("TERMUX_VERSION") or "/com.termux/" in prefix or prefix.endswith("/com.termux/files/usr"));
+
+    @classmethod
+    def _termux_media_command(cls):
+        if not cls._is_termux_environment(): return None;
+        return shutil.which("termux-media-player");
+
+    @classmethod
+    def _termux_media_call(cls, action, media_file=None, timeout=2.0):
+        command = cls._termux_media_command();
+        if not command: return False;
+        argv = [command, str(action)];
+        if media_file is not None: argv.append(str(media_file));
+        try:
+            result = subprocess.run(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=max(.2, float(timeout)), check=False);
+            return result.returncode == 0;
+        except (OSError, subprocess.SubprocessError):
+            return False;
+
+    @classmethod
+    def _termux_media_stop(cls):
+        return cls._termux_media_call("stop", timeout=1.0);
+
+    def _termux_wav_file(self, frequency, duration, volume):
+        fd, path = tempfile.mkstemp(prefix="sumtone-", suffix=".wav");
+        try:
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(self._wav_bytes(frequency, duration, volume));
+            return path;
+        except Exception:
+            try: os.close(fd);
+            except OSError: pass;
+            try: os.unlink(path);
+            except OSError: pass;
+            raise;
+
+    def _start_termux_hold(self, frequency, volume, duration_hint=None):
+        if not self._termux_media_command(): return False;
+        # Android MediaPlayer has no loop switch in termux-media-player.  Eight
+        # seconds keeps the generated WAV small and comfortably exceeds the
+        # normal PLAY HOLD safety window used by interactive examples.
+        duration = 8.0;
+        try: path = self._termux_wav_file(frequency, duration, volume);
+        except Exception: return False;
+        if not self._termux_media_call("play", path):
+            try: os.unlink(path);
+            except OSError: pass;
+            return False;
+        with self._termux_media_lock:
+            self._termux_media_file = path;
+        self._hold_backend = "termux-media-player";
+        return True;
+
+    def _play_termux_blocking(self, frequency, duration, volume):
+        if not self._termux_media_command(): return False;
+        try: path = self._termux_wav_file(frequency, duration, volume);
+        except Exception: return False;
+        if not self._termux_media_call("play", path):
+            try: os.unlink(path);
+            except OSError: pass;
+            return False;
+        with self._termux_media_lock:
+            self._termux_media_file = path;
+        deadline = time.monotonic() + max(0.0, float(duration));
+        cancelled = False;
+        while time.monotonic() < deadline:
+            with self._active_lock: cancel_event = self._active_cancel_event;
+            if cancel_event is not None and cancel_event.is_set():
+                cancelled = True;
+                break;
+            time.sleep(min(.02, max(0.0, deadline - time.monotonic())));
+        with self._termux_media_lock:
+            owned = self._termux_media_file == path;
+            if owned: self._termux_media_file = None;
+        if cancelled and owned: self._termux_media_stop();
+        try: os.unlink(path);
+        except OSError: pass;
+        return True;
 
     def _start_pygame_hold(self, frequency, volume, initialize=False):
         pygame = self._pygame_module();
@@ -231,7 +323,7 @@ class SystemTonePlayer:
         thread.start();
         return True;
 
-    def hold(self, frequency, volume=1.0):
+    def hold(self, frequency, volume=1.0, duration_hint=None):
         """Start one cancellable continuous sine with a click-free release.""";
         self.stop();
         frequency = float(frequency);
@@ -239,6 +331,7 @@ class SystemTonePlayer:
         # If a GUI already initialized the mixer, keep the held note on that
         # device.  This avoids aplay/SoX fighting Pygame for the same sink.
         if self._start_pygame_hold(frequency, volume, initialize=False): return True;
+        if self._is_termux_environment() and self._start_termux_hold(frequency, volume, duration_hint=duration_hint): return True;
         aplay = shutil.which("aplay");
         if aplay:
             command = [aplay, "-q", "-t", "raw", "-f", "S16_LE", "-c", "1", "-r", str(self.sample_rate), "-"];
@@ -305,6 +398,7 @@ class SystemTonePlayer:
                 return True;
             except Exception:
                 pass;
+        if self._is_termux_environment() and self._play_termux_blocking(frequency, duration, volume): return True;
         player = shutil.which("play");
         if player:
             try:
@@ -704,7 +798,7 @@ class MusicEngine:
             if not same:
                 for player in self._channel_players: player.stop();
                 volume = event.volume * self.output_volume;
-                held = self._channel_players[0].hold(event.frequency, volume);
+                held = self._channel_players[0].hold(event.frequency, volume, duration_hint=timeout);
                 if not held:
                     # Last-resort compatibility path: if the continuous backend
                     # cannot open, use the same finite tone renderer that BEEP/

@@ -82,3 +82,36 @@ def test_hold_prefers_an_already_initialized_pygame_mixer_before_external_audio(
     player = audio.SystemTonePlayer();
     assert player.hold(440, .5) is True;
     assert calls == [(440.0, .5, False)];
+
+
+def test_termux_hold_uses_native_media_player_and_cleans_temp_file(monkeypatch, tmp_path):
+    import os;
+    import sumcore.audio as audio;
+    calls = [];
+    class Result:
+        returncode = 0;
+    def run(command, **_kwargs):
+        calls.append(list(command));
+        return Result();
+    monkeypatch.setenv("TERMUX_VERSION", "0.119-test");
+    monkeypatch.setenv("TMPDIR", str(tmp_path));
+    monkeypatch.setattr(audio.shutil, "which", lambda name: "/data/data/com.termux/files/usr/bin/termux-media-player" if name == "termux-media-player" else None);
+    monkeypatch.setattr(audio.subprocess, "run", run);
+    monkeypatch.setattr(audio.SystemTonePlayer, "_start_pygame_hold", lambda self, frequency, volume, initialize=False: False);
+    player = audio.SystemTonePlayer();
+    assert player.hold(220, .5, duration_hint=.7) is True;
+    media_file = player._termux_media_file;
+    assert media_file is not None and os.path.exists(media_file);
+    assert calls[0][1] == "play";
+    assert calls[0][2] == media_file;
+    player.stop();
+    assert calls[-1][1] == "stop";
+    assert not os.path.exists(media_file);
+
+
+def test_termux_backend_is_not_selected_outside_termux(monkeypatch):
+    import sumcore.audio as audio;
+    monkeypatch.delenv("TERMUX_VERSION", raising=False);
+    monkeypatch.setenv("PREFIX", "/usr");
+    monkeypatch.setattr(audio.shutil, "which", lambda name: "/usr/bin/termux-media-player" if name == "termux-media-player" else None);
+    assert audio.SystemTonePlayer._termux_media_command() is None;

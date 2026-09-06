@@ -16,8 +16,11 @@ play("T180O5cdefgabC");
 stop_audio();
 ```
 
-The package also installs `sumbeep`, `sumplay`, and `sumsound`. Android may
-currently fall back to a terminal bell/vibration when no PCM output backend is
-available; language semantics remain independent from that backend limitation.
+The package also installs `sumbeep`, `sumplay`, and `sumsound`. On Termux,
+`sumCore` now prefers the native `termux-media-player` command when it is
+available, generating temporary WAV data and letting Android's MediaPlayer own
+the device. This avoids requiring direct ALSA access from the Unix process. If
+that API is unavailable, the ordinary POSIX/Pygame/terminal fallbacks still
+apply; language semantics remain independent from the selected backend.
 
 <p align=center><b>- oOo -</b></p>
