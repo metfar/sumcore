@@ -78,8 +78,9 @@ class SystemTonePlayer:
     own player instead of forcing all historical sound models through one
     blocking queue.
     """
-    def __init__(self, sample_rate=22050):
+    def __init__(self, sample_rate=48000, release_ms=8):
         self.sample_rate = max(8000, int(sample_rate));
+        self.release_ms = max(0, int(release_ms));
         self._tone_queue = queue.Queue();
         self._worker = None;
         self._worker_lock = threading.Lock();
@@ -93,6 +94,7 @@ class SystemTonePlayer:
         self._hold_process = None;
         self._hold_stop_event = None;
         self._hold_thread = None;
+        self._hold_backend = None;
 
     def _ensure_worker(self):
         with self._worker_lock:
@@ -120,84 +122,132 @@ class SystemTonePlayer:
         self._hold_channel = None;
         self._hold_sound = None;
         if channel is not None:
-            try: channel.stop();
-            except Exception: pass;
+            try:
+                if self.release_ms > 0: channel.fadeout(self.release_ms);
+                else: channel.stop();
+            except Exception:
+                pass;
         hold_stop_event = self._hold_stop_event;
-        self._hold_stop_event = None;
-        if hold_stop_event is not None: hold_stop_event.set();
         hold_process = self._hold_process;
+        hold_thread = self._hold_thread;
+        hold_backend = self._hold_backend;
+        self._hold_stop_event = None;
         self._hold_process = None;
+        self._hold_thread = None;
+        self._hold_backend = None;
+        if hold_stop_event is not None: hold_stop_event.set();
+        if hold_thread is not None and str(hold_backend).startswith("pcm:"):
+            try: hold_thread.join(timeout=max(.05, (self.release_ms / 1000.0) + .05));
+            except Exception: pass;
         if hold_process is not None:
             try:
+                if str(hold_backend).startswith("pcm:") and hold_process.poll() is None:
+                    hold_process.wait(timeout=max(.04, (self.release_ms / 1000.0) + .04));
                 if hold_process.poll() is None: hold_process.terminate();
-            except Exception: pass;
-        self._hold_thread = None;
+            except Exception:
+                try:
+                    if hold_process.poll() is None: hold_process.terminate();
+                except Exception: pass;
         return None;
 
-    def hold(self, frequency, volume=1.0):
-        """Start one cancellable continuous sine using the normal audio path.
-
-        Prefer the same external renderers used by finite tones.  This avoids a
-        subtle Linux failure mode where Pygame successfully allocates a mixer
-        channel but that channel is not connected to the active desktop audio
-        device while SoX/aplay are.  Pygame remains a portable fallback.
-        """;
-        self.stop();
-        frequency = float(frequency);
-        volume = max(0.0, min(1.0, float(volume)));
-        player = shutil.which("play");
-        if player:
-            try:
-                self._hold_process = subprocess.Popen(
-                    [player, "-q", "-v", "{:.4f}".format(volume), "-n", "synth", "sine", "{:.6f}".format(frequency)],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                );
-                return True;
-            except OSError:
-                self._hold_process = None;
-        aplay = shutil.which("aplay");
-        if aplay:
-            try:
-                process = subprocess.Popen(
-                    [aplay, "-q", "-t", "raw", "-f", "S16_LE", "-c", "1", "-r", str(self.sample_rate), "-"],
-                    stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                );
-                stop_event = threading.Event();
-                self._hold_process = process;
-                self._hold_stop_event = stop_event;
-                chunk = self._pcm_bytes(frequency, .10, volume);
-                def feed_hold():
-                    try:
-                        while not stop_event.is_set() and process.poll() is None:
-                            process.stdin.write(chunk);
-                            process.stdin.flush();
-                    except (BrokenPipeError, OSError, ValueError):
-                        pass;
-                    finally:
-                        try: process.stdin.close();
-                        except Exception: pass;
-                thread = threading.Thread(target=feed_hold, name="sumCore-audio-hold", daemon=True);
-                self._hold_thread = thread;
-                thread.start();
-                return True;
-            except OSError:
-                self._hold_process = None;
-                self._hold_stop_event = None;
+    @staticmethod
+    def _pygame_module():
         try:
-            # Pygame is only an output device here; samples still come from
-            # SystemTonePlayer. Silence its import banner/warnings so a text
-            # program never has its screen corrupted by the backend.
             with warnings.catch_warnings(), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 warnings.simplefilter("ignore");
                 import pygame;
-            if not pygame.mixer.get_init(): pygame.mixer.init(frequency=self.sample_rate, size=-16, channels=1);
-            sound = pygame.mixer.Sound(file=io.BytesIO(self._wav_bytes(frequency, 1.0, volume)));
-            self._hold_channel = sound.play(loops=-1);
-            if self._hold_channel is not None:
-                self._hold_sound = sound;
-                return True;
+            return pygame;
         except Exception:
-            pass;
+            return None;
+
+    def _start_pygame_hold(self, frequency, volume, initialize=False):
+        pygame = self._pygame_module();
+        if pygame is None: return False;
+        try:
+            if not pygame.mixer.get_init():
+                if not initialize: return False;
+                pygame.mixer.init(frequency=self.sample_rate, size=-16, channels=1);
+            sound = pygame.mixer.Sound(file=io.BytesIO(self._wav_bytes(frequency, 2.0, volume)));
+            channel = sound.play(loops=-1);
+            if channel is None: return False;
+            self._hold_channel = channel;
+            self._hold_sound = sound;
+            self._hold_backend = "pygame";
+            return True;
+        except Exception:
+            return False;
+
+    def _start_pcm_hold(self, command, backend, frequency, volume):
+        try:
+            process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL);
+        except OSError:
+            return False;
+        # GUI frontends may already own the audio device through Pygame.  Aplay
+        # can then spawn successfully but die immediately; do not report that as
+        # a usable backend or PLAY HOLD becomes silently stuck.
+        time.sleep(.012);
+        if process.poll() is not None or process.stdin is None:
+            try: process.stdin.close();
+            except Exception: pass;
+            return False;
+        stop_event = threading.Event();
+        self._hold_process = process;
+        self._hold_stop_event = stop_event;
+        self._hold_backend = "pcm:" + str(backend);
+        chunk_count = max(32, int(round(self.sample_rate * .010)));
+        release_count = max(1, int(round(self.sample_rate * self.release_ms / 1000.0)));
+        amplitude = int(11000 * volume);
+        def feed_hold():
+            sample_index = 0;
+            try:
+                while not stop_event.is_set() and process.poll() is None:
+                    started = time.monotonic();
+                    frames = bytearray();
+                    for offset in range(chunk_count):
+                        phase_index = sample_index + offset;
+                        sample = int(amplitude * math.sin((2.0 * math.pi * frequency * phase_index) / self.sample_rate));
+                        frames.extend(struct.pack("<h", sample));
+                    process.stdin.write(frames);
+                    process.stdin.flush();
+                    sample_index += chunk_count;
+                    elapsed = time.monotonic() - started;
+                    stop_event.wait(max(0.0, (chunk_count / float(self.sample_rate)) - elapsed));
+                if process.poll() is None and self.release_ms > 0:
+                    frames = bytearray();
+                    for offset in range(release_count):
+                        gain = max(0.0, 1.0 - ((offset + 1) / float(release_count)));
+                        phase_index = sample_index + offset;
+                        sample = int(amplitude * gain * math.sin((2.0 * math.pi * frequency * phase_index) / self.sample_rate));
+                        frames.extend(struct.pack("<h", sample));
+                    process.stdin.write(frames);
+                    process.stdin.flush();
+            except (BrokenPipeError, OSError, ValueError):
+                pass;
+            finally:
+                try: process.stdin.close();
+                except Exception: pass;
+        thread = threading.Thread(target=feed_hold, name="sumCore-audio-hold", daemon=True);
+        self._hold_thread = thread;
+        thread.start();
+        return True;
+
+    def hold(self, frequency, volume=1.0):
+        """Start one cancellable continuous sine with a click-free release.""";
+        self.stop();
+        frequency = float(frequency);
+        volume = max(0.0, min(1.0, float(volume)));
+        # If a GUI already initialized the mixer, keep the held note on that
+        # device.  This avoids aplay/SoX fighting Pygame for the same sink.
+        if self._start_pygame_hold(frequency, volume, initialize=False): return True;
+        aplay = shutil.which("aplay");
+        if aplay:
+            command = [aplay, "-q", "-t", "raw", "-f", "S16_LE", "-c", "1", "-r", str(self.sample_rate), "-"];
+            if self._start_pcm_hold(command, "aplay", frequency, volume): return True;
+        player = shutil.which("play");
+        if player:
+            command = [player, "-q", "-t", "raw", "-r", str(self.sample_rate), "-e", "signed-integer", "-b", "16", "-c", "1", "-L", "-"];
+            if self._start_pcm_hold(command, "sox", frequency, volume): return True;
+        if self._start_pygame_hold(frequency, volume, initialize=True): return True;
         return False;
 
     def play(self, frequency, duration, blocking=True, volume=1.0):
@@ -406,7 +456,7 @@ class ZXPlayParser:
                 if value is None:
                     raise MusicParseError("ZXPLAY {} requires a number".format(upper));
                 if upper == "O":
-                    if value < 0 or value > 8: raise MusicParseError("ZXPLAY octave must be 0..8");
+                    if value < 0 or value > 10: raise MusicParseError("ZXPLAY octave must be 0..10");
                     octave = value;
                 elif upper == "T":
                     if value < 60 or value > 240: raise MusicParseError("ZXPLAY tempo must be 60..240 BPM");

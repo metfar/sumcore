@@ -36,13 +36,22 @@ def test_common_facade_preserves_basic_units_and_dialects():
     assert tones[2][2] is True;
 
 
-def test_hold_prefers_normal_sox_audio_path_before_pygame(monkeypatch):
+def test_hold_uses_streamed_sox_pcm_when_mixer_is_not_already_active(monkeypatch):
     import sumcore.audio as audio;
     calls = [];
+    class Pipe:
+        def __init__(self, owner): self.owner = owner; self.closed = False; self.data = bytearray();
+        def write(self, payload): self.data.extend(payload); return len(payload);
+        def flush(self): return None;
+        def close(self): self.closed = True; self.owner.terminated = True;
     class Process:
-        def __init__(self, command): self.command = command; self.terminated = False;
+        def __init__(self, command):
+            self.command = command;
+            self.terminated = False;
+            self.stdin = Pipe(self);
         def poll(self): return None if not self.terminated else 0;
         def terminate(self): self.terminated = True;
+        def wait(self, timeout=None): self.terminated = True; return 0;
     process = None;
     def popen(command, **_kwargs):
         nonlocal process;
@@ -51,9 +60,25 @@ def test_hold_prefers_normal_sox_audio_path_before_pygame(monkeypatch):
         return process;
     monkeypatch.setattr(audio.shutil, "which", lambda name: "/usr/bin/play" if name == "play" else None);
     monkeypatch.setattr(audio.subprocess, "Popen", popen);
+    monkeypatch.setattr(audio.SystemTonePlayer, "_start_pygame_hold", lambda self, frequency, volume, initialize=False: False);
     player = audio.SystemTonePlayer();
     assert player.hold(440, .25) is True;
     assert calls and calls[0][0] == "/usr/bin/play";
-    assert "sine" in calls[0];
+    assert "raw" in calls[0];
     player.stop();
     assert process.terminated is True;
+    assert process.stdin.data;
+
+
+
+def test_hold_prefers_an_already_initialized_pygame_mixer_before_external_audio(monkeypatch):
+    import sumcore.audio as audio;
+    calls = [];
+    def pygame_hold(self, frequency, volume, initialize=False):
+        calls.append((frequency, volume, initialize));
+        return initialize is False;
+    monkeypatch.setattr(audio.SystemTonePlayer, "_start_pygame_hold", pygame_hold);
+    monkeypatch.setattr(audio.shutil, "which", lambda _name: (_ for _ in ()).throw(AssertionError("external backend should not be probed")));
+    player = audio.SystemTonePlayer();
+    assert player.hold(440, .5) is True;
+    assert calls == [(440.0, .5, False)];
