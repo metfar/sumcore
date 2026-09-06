@@ -69,3 +69,8 @@ def test_sumplay_supports_zx_voices_gw_and_hold_timeout():
     assert main_play(["--hold", "--timeout", ".001", "O4c"], FakeAudio) == 0;
     assert ("hold", "O4c", .001) in _last().calls;
     assert _last().calls[-1] == ("stop",);
+
+
+def test_sumplay_accepts_software_gain_above_unity():
+    assert main_play(["--volume", "150", "O4c"], FakeAudio) == 0;
+    assert ("volume", "PLAY", 1.5) in _last().calls;

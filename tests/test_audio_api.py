@@ -90,6 +90,8 @@ def test_termux_hold_uses_native_media_player_and_cleans_temp_file(monkeypatch, 
     calls = [];
     class Result:
         returncode = 0;
+        stdout = "Now Playing: sumtone-test.wav\n";
+        stderr = "";
     def run(command, **_kwargs):
         calls.append(list(command));
         return Result();
@@ -115,3 +117,60 @@ def test_termux_backend_is_not_selected_outside_termux(monkeypatch):
     monkeypatch.setenv("PREFIX", "/usr");
     monkeypatch.setattr(audio.shutil, "which", lambda name: "/usr/bin/termux-media-player" if name == "termux-media-player" else None);
     assert audio.SystemTonePlayer._termux_media_command() is None;
+
+
+def test_play_bus_allows_150_percent_software_gain_without_unity_clamp():
+    from sumcore.audio import AudioEngine, SystemTonePlayer;
+    engine = AudioEngine();
+    assert engine.set_volume("PLAY", 1.5) == 1.5;
+    assert engine.get_volume("PLAY") == 1.5;
+    player = SystemTonePlayer();
+    frames = player._pcm_bytes(440, .01, 1.5);
+    assert frames;
+    samples = __import__("struct").unpack("<{}h".format(len(frames) // 2), frames);
+    assert max(abs(value) for value in samples) > 11000;
+    assert max(abs(value) for value in samples) <= 32767;
+
+
+def test_finite_posix_tone_uses_same_raw_pcm_sox_path_as_hold(monkeypatch):
+    import sumcore.audio as audio;
+    calls = [];
+    class Process:
+        def __init__(self, command):
+            self.command = list(command);
+            self.returncode = None;
+            self.payload = None;
+        def communicate(self, payload):
+            self.payload = bytes(payload);
+            self.returncode = 0;
+            return (b"", b"");
+        def poll(self): return self.returncode;
+        def terminate(self): self.returncode = -15;
+    process = None;
+    def popen(command, **_kwargs):
+        nonlocal process;
+        process = Process(command);
+        calls.append(process);
+        return process;
+    monkeypatch.delenv("TERMUX_VERSION", raising=False);
+    monkeypatch.setenv("PREFIX", "/usr");
+    monkeypatch.setattr(audio.shutil, "which", lambda name: "/usr/bin/play" if name == "play" else None);
+    monkeypatch.setattr(audio.subprocess, "Popen", popen);
+    player = audio.SystemTonePlayer();
+    assert player._play_blocking(440, .05, 1.5) is True;
+    assert calls;
+    assert calls[0].command[:4] == ["/usr/bin/play", "-q", "-t", "raw"];
+    assert "synth" not in calls[0].command;
+    assert calls[0].payload == player._pcm_bytes(440, .05, 1.5);
+
+
+def test_termux_media_player_stdout_error_does_not_mask_backend_failure(monkeypatch):
+    import sumcore.audio as audio;
+    class Result:
+        returncode = 0;
+        stdout = "setDataSource failed: status = 0x80000000\n";
+        stderr = "";
+    monkeypatch.setenv("TERMUX_VERSION", "0.119-test");
+    monkeypatch.setattr(audio.shutil, "which", lambda name: "/data/data/com.termux/files/usr/bin/termux-media-player" if name == "termux-media-player" else None);
+    monkeypatch.setattr(audio.subprocess, "run", lambda *args, **kwargs: Result());
+    assert audio.SystemTonePlayer._termux_media_call("play", "/tmp/tone.wav") is False;

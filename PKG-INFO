@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumcore
-Version: 0.1.0a7
+Version: 0.1.0a8
 Summary: Core architecture, registry and release metadata for the Sum ecosystem.
 Author-email: William Martinez Bas <metfar@gmail.com>
 License: GPL-2.0-or-later

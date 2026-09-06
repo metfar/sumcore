@@ -187,8 +187,17 @@ class SystemTonePlayer:
         argv = [command, str(action)];
         if media_file is not None: argv.append(str(media_file));
         try:
-            result = subprocess.run(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=max(.2, float(timeout)), check=False);
-            return result.returncode == 0;
+            result = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=max(.2, float(timeout)), check=False, text=True);
+            if result.returncode != 0: return False;
+            output = ((getattr(result, "stdout", "") or "") + "\n" + (getattr(result, "stderr", "") or "")).strip().lower();
+            if "error:" in output or output.startswith("error") or "exception" in output: return False;
+            if str(action).lower() == "play" and media_file is not None and output and "now playing" not in output:
+                # Termux:API reports MediaPlayer preparation errors on stdout and
+                # historically may still exit with status 0.  Unknown/empty output
+                # is tolerated for alternate implementations, but a non-empty
+                # response must acknowledge successful playback.
+                return False;
+            return True;
         except (OSError, subprocess.SubprocessError):
             return False;
 
@@ -298,6 +307,7 @@ class SystemTonePlayer:
                     for offset in range(chunk_count):
                         phase_index = sample_index + offset;
                         sample = int(amplitude * math.sin((2.0 * math.pi * frequency * phase_index) / self.sample_rate));
+                        sample = max(-32768, min(32767, sample));
                         frames.extend(struct.pack("<h", sample));
                     process.stdin.write(frames);
                     process.stdin.flush();
@@ -310,6 +320,7 @@ class SystemTonePlayer:
                         gain = max(0.0, 1.0 - ((offset + 1) / float(release_count)));
                         phase_index = sample_index + offset;
                         sample = int(amplitude * gain * math.sin((2.0 * math.pi * frequency * phase_index) / self.sample_rate));
+                        sample = max(-32768, min(32767, sample));
                         frames.extend(struct.pack("<h", sample));
                     process.stdin.write(frames);
                     process.stdin.flush();
@@ -327,7 +338,7 @@ class SystemTonePlayer:
         """Start one cancellable continuous sine with a click-free release.""";
         self.stop();
         frequency = float(frequency);
-        volume = max(0.0, min(1.0, float(volume)));
+        volume = max(0.0, min(3.0, float(volume)));
         # If a GUI already initialized the mixer, keep the held note on that
         # device.  This avoids aplay/SoX fighting Pygame for the same sink.
         if self._start_pygame_hold(frequency, volume, initialize=False): return True;
@@ -346,7 +357,7 @@ class SystemTonePlayer:
     def play(self, frequency, duration, blocking=True, volume=1.0):
         frequency = float(frequency);
         duration = max(0.0, float(duration));
-        volume = max(0.0, min(1.0, float(volume)));
+        volume = max(0.0, min(3.0, float(volume)));
         if duration <= 0.0:
             return None;
         completed = threading.Event() if blocking else None;
@@ -399,26 +410,31 @@ class SystemTonePlayer:
             except Exception:
                 pass;
         if self._is_termux_environment() and self._play_termux_blocking(frequency, duration, volume): return True;
-        player = shutil.which("play");
-        if player:
+        # Keep finite tones on the same PCM path as PLAY HOLD.  This matters
+        # on Termux/SoX builds where the streaming playback device works but the
+        # `play -n synth ...` convenience path does not.
+        payload = self._pcm_bytes(frequency, duration, volume);
+        aplay = shutil.which("aplay");
+        if aplay:
             try:
-                process = subprocess.Popen([player, "-q", "-v", "{:.4f}".format(volume), "-n", "synth", "{:.6f}".format(duration), "sine", "{:.6f}".format(frequency)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL);
+                command = [aplay, "-q", "-t", "raw", "-f", "S16_LE", "-c", "1", "-r", str(self.sample_rate), "-"];
+                process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL);
                 with self._active_lock: self._active_process = process;
-                process.wait();
-                return process.returncode == 0;
+                process.communicate(payload);
+                if process.returncode == 0: return True;
             except OSError:
                 pass;
             finally:
                 with self._active_lock:
                     if self._active_process is locals().get("process"): self._active_process = None;
-        aplay = shutil.which("aplay");
-        if aplay:
+        player = shutil.which("play");
+        if player:
             try:
-                payload = self._wav_bytes(frequency, duration, volume);
-                process = subprocess.Popen([aplay, "-q", "-"], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL);
+                command = [player, "-q", "-t", "raw", "-r", str(self.sample_rate), "-e", "signed-integer", "-b", "16", "-c", "1", "-L", "-"];
+                process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL);
                 with self._active_lock: self._active_process = process;
                 process.communicate(payload);
-                return process.returncode == 0;
+                if process.returncode == 0: return True;
             except OSError:
                 pass;
             finally:
@@ -438,10 +454,11 @@ class SystemTonePlayer:
 
     def _pcm_bytes(self, frequency, duration, volume=1.0):
         count = max(1, int(round(self.sample_rate * float(duration))));
-        amplitude = int(11000 * max(0.0, min(1.0, float(volume))));
+        amplitude = int(11000 * max(0.0, min(3.0, float(volume))));
         frames = bytearray();
         for index in range(count):
             sample = int(amplitude * math.sin((2.0 * math.pi * float(frequency) * index) / self.sample_rate));
+            sample = max(-32768, min(32767, sample));
             frames.extend(struct.pack("<h", sample));
         return bytes(frames);
 
@@ -761,7 +778,7 @@ class MusicEngine:
         return None;
 
     def set_output_volume(self, volume):
-        self.output_volume = max(0.0, min(1.0, float(volume)));
+        self.output_volume = max(0.0, min(3.0, float(volume)));
         return self.output_volume;
 
     def _enqueue(self, tracks, background):
@@ -858,7 +875,7 @@ class MusicEngine:
                 while generation == self._current_generation() and time.monotonic() < deadline:
                     self.sleep_func(min(.02, max(0.0, deadline - time.monotonic())));
                 continue;
-            volume = max(0.0, min(1.0, event.volume * self.output_volume));
+            volume = max(0.0, min(3.0, event.volume * self.output_volume));
             if self.tone_func is not None:
                 _call_tone_func(self.tone_func, event.frequency, event.duration, True, volume);
             else:
@@ -884,7 +901,7 @@ class AudioEngine:
 
     def set_volume(self, bus, volume):
         key = self._volume_bus(bus);
-        value = max(0.0, min(1.0, float(volume)));
+        value = max(0.0, min(3.0, float(volume)));
         targets = ("BEEP", "SOUND", "PLAY") if key == "ALL" else (key,);
         for target in targets: self._volumes[target] = value;
         self.music.set_output_volume(self._volumes["PLAY"]);

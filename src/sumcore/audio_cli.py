@@ -40,8 +40,8 @@ from .audio import (
 
 def _volume(value):
     number = float(value);
-    if number < 0.0 or number > 100.0:
-        raise argparse.ArgumentTypeError("volume must be between 0 and 100");
+    if number < 0.0 or number > 300.0:
+        raise argparse.ArgumentTypeError("volume must be between 0 and 300");
     return number;
 
 
