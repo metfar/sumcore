@@ -19,7 +19,11 @@ stop_audio();
 The package also installs `sumbeep`, `sumplay`, and `sumsound`. On Termux,
 `sumCore` now prefers the native `termux-media-player` command when it is
 available, generating temporary WAV data and letting Android's MediaPlayer own
-the device. This avoids requiring direct ALSA access from the Unix process. If
+the device. Finite tones include a short silent preroll/postroll inside the same
+WAV so Android can open its higher-latency audio path before the requested tone
+begins. The defaults are 400 ms preroll and 100 ms postroll; Termux users can
+tune them without rebuilding with `SUM_TERMUX_AUDIO_PREROLL_MS` and
+`SUM_TERMUX_AUDIO_POSTROLL_MS`. This avoids requiring direct ALSA access from the Unix process. If
 that API is unavailable, the ordinary POSIX/Pygame/terminal fallbacks still
 apply; language semantics remain independent from the selected backend.
 

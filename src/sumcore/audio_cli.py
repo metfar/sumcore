@@ -52,8 +52,13 @@ def _non_negative(value):
     return number;
 
 
-def _parser(name, description):
-    parser = argparse.ArgumentParser(prog=name, description=description);
+def _parser(name, description, epilog=None):
+    parser = argparse.ArgumentParser(
+        prog=name,
+        description=description,
+        epilog=epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter if epilog else argparse.HelpFormatter,
+    );
     parser.add_argument("--version", action="version", version="%(prog)s {}".format(__version__));
     return parser;
 
@@ -120,7 +125,20 @@ def main_sound(argv=None, audio_factory=AudioEngine):
 
 
 def main_play(argv=None, audio_factory=AudioEngine):
-    parser = _parser("sumplay", "Play ZX Spectrum or GW-BASIC music strings through the common Sum audio engine.");
+    parser = _parser(
+        "sumplay",
+        "Play ZX Spectrum or GW-BASIC music strings through the common Sum audio engine.",
+        epilog=(
+            "ZX notation:\n"
+            "  notes c..b / C..B; sharp #c; flat $e; rest &\n"
+            "  dotted values use duration codes 2,4,6,8 (not a period)\n"
+            "GW notation (--gw):\n"
+            "  notes A..G; sharp C# or C+; flat E-; rest P4; dotted C4. or P4.\n"
+            "Examples:\n"
+            "  sumplay 'T120O5N5c6#d5&5$e'\n"
+            "  sumplay --gw 'T120 O4 L4 C D# E. P4 E-'"
+        ),
+    );
     parser.add_argument("music", nargs="+", help="one to three ZX strings, or one GW-BASIC string with --gw");
     parser.add_argument("--gw", action="store_true", help="interpret one string as GW-BASIC MML");
     parser.add_argument("--hold", action="store_true", help="hold one ZX note instead of playing a finite phrase");

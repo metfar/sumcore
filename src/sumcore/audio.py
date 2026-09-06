@@ -79,9 +79,17 @@ class SystemTonePlayer:
     own player instead of forcing all historical sound models through one
     blocking queue.
     """
-    def __init__(self, sample_rate=48000, release_ms=8):
+    def __init__(self, sample_rate=48000, release_ms=8, termux_preroll=None, termux_postroll=None):
         self.sample_rate = max(8000, int(sample_rate));
         self.release_ms = max(0, int(release_ms));
+        if termux_preroll is None:
+            try: termux_preroll = float(os.environ.get("SUM_TERMUX_AUDIO_PREROLL_MS", "400")) / 1000.0;
+            except ValueError: termux_preroll = .40;
+        if termux_postroll is None:
+            try: termux_postroll = float(os.environ.get("SUM_TERMUX_AUDIO_POSTROLL_MS", "100")) / 1000.0;
+            except ValueError: termux_postroll = .10;
+        self.termux_preroll = max(0.0, float(termux_preroll));
+        self.termux_postroll = max(0.0, float(termux_postroll));
         self._tone_queue = queue.Queue();
         self._worker = None;
         self._worker_lock = threading.Lock();
@@ -205,11 +213,11 @@ class SystemTonePlayer:
     def _termux_media_stop(cls):
         return cls._termux_media_call("stop", timeout=1.0);
 
-    def _termux_wav_file(self, frequency, duration, volume):
+    def _termux_wav_file(self, frequency, duration, volume, preroll=0.0, postroll=0.0):
         fd, path = tempfile.mkstemp(prefix="sumtone-", suffix=".wav");
         try:
             with os.fdopen(fd, "wb") as stream:
-                stream.write(self._wav_bytes(frequency, duration, volume));
+                stream.write(self._wav_bytes(frequency, duration, volume, preroll=preroll, postroll=postroll));
             return path;
         except Exception:
             try: os.close(fd);
@@ -237,7 +245,13 @@ class SystemTonePlayer:
 
     def _play_termux_blocking(self, frequency, duration, volume):
         if not self._termux_media_command(): return False;
-        try: path = self._termux_wav_file(frequency, duration, volume);
+        # Android MediaPlayer has considerably higher device-open latency than
+        # the streaming PCM backends.  A short silent preroll lets the Android
+        # audio path settle before the requested tone begins; a small postroll
+        # keeps the file alive until the final samples have left the pipeline.
+        preroll = self.termux_preroll;
+        postroll = self.termux_postroll;
+        try: path = self._termux_wav_file(frequency, duration, volume, preroll=preroll, postroll=postroll);
         except Exception: return False;
         if not self._termux_media_call("play", path):
             try: os.unlink(path);
@@ -245,7 +259,7 @@ class SystemTonePlayer:
             return False;
         with self._termux_media_lock:
             self._termux_media_file = path;
-        deadline = time.monotonic() + max(0.0, float(duration));
+        deadline = time.monotonic() + preroll + max(0.0, float(duration)) + postroll;
         cancelled = False;
         while time.monotonic() < deadline:
             with self._active_lock: cancel_event = self._active_cancel_event;
@@ -462,8 +476,10 @@ class SystemTonePlayer:
             frames.extend(struct.pack("<h", sample));
         return bytes(frames);
 
-    def _wav_bytes(self, frequency, duration, volume=1.0):
-        frames = self._pcm_bytes(frequency, duration, volume);
+    def _wav_bytes(self, frequency, duration, volume=1.0, preroll=0.0, postroll=0.0):
+        prefix = b"\x00\x00" * max(0, int(round(self.sample_rate * float(preroll))));
+        suffix = b"\x00\x00" * max(0, int(round(self.sample_rate * float(postroll))));
+        frames = prefix + self._pcm_bytes(frequency, duration, volume) + suffix;
         stream = io.BytesIO();
         with wave.open(stream, "wb") as wav:
             wav.setnchannels(1);

@@ -174,3 +174,46 @@ def test_termux_media_player_stdout_error_does_not_mask_backend_failure(monkeypa
     monkeypatch.setattr(audio.shutil, "which", lambda name: "/data/data/com.termux/files/usr/bin/termux-media-player" if name == "termux-media-player" else None);
     monkeypatch.setattr(audio.subprocess, "run", lambda *args, **kwargs: Result());
     assert audio.SystemTonePlayer._termux_media_call("play", "/tmp/tone.wav") is False;
+
+
+def test_termux_finite_wav_has_silent_preroll_and_postroll():
+    import io;
+    import struct;
+    import wave;
+    from sumcore.audio import SystemTonePlayer;
+    player = SystemTonePlayer(sample_rate=8000, termux_preroll=.4, termux_postroll=.1);
+    payload = player._wav_bytes(100, .2, 1.0, preroll=.4, postroll=.1);
+    with wave.open(io.BytesIO(payload), "rb") as wav:
+        frames = wav.readframes(wav.getnframes());
+        assert wav.getnframes() == 5600;
+    samples = struct.unpack("<{}h".format(len(frames) // 2), frames);
+    assert all(value == 0 for value in samples[:3200]);
+    assert any(value != 0 for value in samples[3200:4800]);
+    assert all(value == 0 for value in samples[4800:]);
+
+
+def test_termux_finite_player_keeps_media_alive_for_preroll_tone_and_postroll(monkeypatch, tmp_path):
+    import sumcore.audio as audio;
+    calls = [];
+    monkeypatch.setenv("TERMUX_VERSION", "0.119-test");
+    monkeypatch.setattr(audio.shutil, "which", lambda name: "/data/data/com.termux/files/usr/bin/termux-media-player" if name == "termux-media-player" else None);
+    player = audio.SystemTonePlayer(sample_rate=1000, termux_preroll=.002, termux_postroll=.001);
+    media = tmp_path / "tone.wav";
+    media.write_bytes(b"x");
+    monkeypatch.setattr(player, "_termux_wav_file", lambda frequency, duration, volume, preroll=0.0, postroll=0.0: (calls.append((frequency, duration, volume, preroll, postroll)) or str(media)));
+    monkeypatch.setattr(player, "_termux_media_call", lambda action, media_file=None, timeout=2.0: True);
+    started = __import__("time").monotonic();
+    assert player._play_termux_blocking(440, .001, 1.0) is True;
+    elapsed = __import__("time").monotonic() - started;
+    assert calls == [(440, .001, 1.0, .002, .001)];
+    assert elapsed >= .003;
+    assert not media.exists();
+
+
+def test_termux_preroll_can_be_tuned_from_environment(monkeypatch):
+    from sumcore.audio import SystemTonePlayer;
+    monkeypatch.setenv("SUM_TERMUX_AUDIO_PREROLL_MS", "900");
+    monkeypatch.setenv("SUM_TERMUX_AUDIO_POSTROLL_MS", "125");
+    player = SystemTonePlayer();
+    assert abs(player.termux_preroll - .9) < 1e-12;
+    assert abs(player.termux_postroll - .125) < 1e-12;

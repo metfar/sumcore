@@ -74,3 +74,19 @@ def test_sumplay_supports_zx_voices_gw_and_hold_timeout():
 def test_sumplay_accepts_software_gain_above_unity():
     assert main_play(["--volume", "150", "O4c"], FakeAudio) == 0;
     assert ("volume", "PLAY", 1.5) in _last().calls;
+
+
+def test_sumplay_help_documents_music_notation(capsys):
+    import pytest;
+    from sumcore.audio_cli import main_play;
+    with pytest.raises(SystemExit) as caught:
+        main_play(["--help"]);
+    assert caught.value.code == 0;
+    text = capsys.readouterr().out;
+    assert "sharp #c" in text;
+    assert "flat $e" in text;
+    assert "rest &" in text;
+    assert "duration codes 2,4,6,8" in text;
+    assert "sharp C# or C+" in text;
+    assert "rest P4" in text;
+    assert "dotted C4. or P4." in text;
