@@ -8,11 +8,16 @@ Core architecture, registry, diagnostics and shared runtime services for the Sum
 language-neutral surface is used by sumBASIC, sumPY, sumR and sumX:
 
 ```python
-from sumcore import beep, play, sound, stop_audio;
+from sumcore import beep, midi_frequency, play, sound, stop_audio, tone_pcm_bytes, tone_wav_bytes;
 
 beep(.25, 12);
 sound(440, 18.2);
 play("T180O5cdefgabC");
+
+# The same canonical sine renderer used by BASIC is available to GUI clients.
+a4 = midi_frequency(69);
+raw = tone_pcm_bytes(a4, .25, volume=.4);
+wav = tone_wav_bytes(a4, .25, volume=.4);
 stop_audio();
 ```
 

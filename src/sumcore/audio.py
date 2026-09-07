@@ -68,8 +68,42 @@ def _call_tone_func(func, frequency, duration, blocking, volume):
         return func(frequency, duration, blocking);
 
 
-def _midi_frequency(midi_note):
+def midi_frequency(midi_note):
+    """Return the equal-tempered frequency for one MIDI note number.""";
     return 440.0 * (2.0 ** ((float(midi_note) - 69.0) / 12.0));
+
+
+def tone_pcm_bytes(frequency, duration, volume=1.0, sample_rate=48000):
+    """Render one mono signed-16 LE sine using the canonical Sum tone gain.""";
+    sample_rate = max(8000, int(sample_rate));
+    count = max(1, int(round(sample_rate * float(duration))));
+    amplitude = int(11000 * max(0.0, min(3.0, float(volume))));
+    frames = bytearray();
+    for index in range(count):
+        sample = int(amplitude * math.sin((2.0 * math.pi * float(frequency) * index) / sample_rate));
+        sample = max(-32768, min(32767, sample));
+        frames.extend(struct.pack("<h", sample));
+    return bytes(frames);
+
+
+def tone_wav_bytes(frequency, duration, volume=1.0, sample_rate=48000, preroll=0.0, postroll=0.0):
+    """Render one mono WAV with the same PCM generator used by Sum BASIC audio.""";
+    sample_rate = max(8000, int(sample_rate));
+    prefix = b"\x00\x00" * max(0, int(round(sample_rate * float(preroll))));
+    suffix = b"\x00\x00" * max(0, int(round(sample_rate * float(postroll))));
+    frames = prefix + tone_pcm_bytes(frequency, duration, volume, sample_rate) + suffix;
+    stream = io.BytesIO();
+    with wave.open(stream, "wb") as wav:
+        wav.setnchannels(1);
+        wav.setsampwidth(2);
+        wav.setframerate(sample_rate);
+        wav.writeframes(frames);
+    return stream.getvalue();
+
+
+# Private compatibility alias retained for older internal callers.
+def _midi_frequency(midi_note):
+    return midi_frequency(midi_note);
 
 
 class SystemTonePlayer:
@@ -512,26 +546,10 @@ class SystemTonePlayer:
         return False;
 
     def _pcm_bytes(self, frequency, duration, volume=1.0):
-        count = max(1, int(round(self.sample_rate * float(duration))));
-        amplitude = int(11000 * max(0.0, min(3.0, float(volume))));
-        frames = bytearray();
-        for index in range(count):
-            sample = int(amplitude * math.sin((2.0 * math.pi * float(frequency) * index) / self.sample_rate));
-            sample = max(-32768, min(32767, sample));
-            frames.extend(struct.pack("<h", sample));
-        return bytes(frames);
+        return tone_pcm_bytes(frequency, duration, volume, self.sample_rate);
 
     def _wav_bytes(self, frequency, duration, volume=1.0, preroll=0.0, postroll=0.0):
-        prefix = b"\x00\x00" * max(0, int(round(self.sample_rate * float(preroll))));
-        suffix = b"\x00\x00" * max(0, int(round(self.sample_rate * float(postroll))));
-        frames = prefix + self._pcm_bytes(frequency, duration, volume) + suffix;
-        stream = io.BytesIO();
-        with wave.open(stream, "wb") as wav:
-            wav.setnchannels(1);
-            wav.setsampwidth(2);
-            wav.setframerate(self.sample_rate);
-            wav.writeframes(frames);
-        return stream.getvalue();
+        return tone_wav_bytes(frequency, duration, volume, self.sample_rate, preroll, postroll);
 
 
 class MusicParseError(ValueError):

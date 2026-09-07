@@ -25,7 +25,7 @@
 
 """Small language-neutral facade over the shared Sum audio engine.""";
 
-from .audio import AudioEngine, gw_ticks_to_seconds, spectrum_frequency_pitch, spectrum_pitch_frequency;
+from .audio import AudioEngine, gw_ticks_to_seconds, midi_frequency, spectrum_frequency_pitch, spectrum_pitch_frequency, tone_pcm_bytes, tone_wav_bytes;
 
 _engine = AudioEngine();
 
@@ -67,4 +67,4 @@ def stop_audio(): return _engine.stop_all();
 def wait_audio(): return _engine.wait_for_background();
 
 
-__all__ = ["audio_engine", "beep", "play", "set_audio_engine", "sound", "stop_audio", "wait_audio"];
+__all__ = ["audio_engine", "beep", "midi_frequency", "play", "set_audio_engine", "sound", "stop_audio", "tone_pcm_bytes", "tone_wav_bytes", "wait_audio"];
