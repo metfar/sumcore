@@ -1,5 +1,3 @@
-
-
 # SUM Ecosystem
 
 ## Install order
@@ -18,10 +16,25 @@
 12. sumdiff
 13. sumdoc
 
+## Optional audio backends
+
+`sumCore` owns `sumaudiod`, `suminfo`, `sumbeep`, `sumsound`, and `sumplay`.
+No additional Python dependency is required for the shared audio API.
+
+Persistent `sumaudiod` output is selected from host commands when available:
+
+1. PulseAudio `pacat` (preferred on Termux);
+2. SoX `play`;
+3. ALSA `aplay`.
+
+On Termux, installing the `pulseaudio` package is recommended. `suminfo` reports
+the detected sinks and the backend actually selected by the daemon.
+
 # SUM Tree
 
 <code><pre>
 sumCore
+ ├── shared audio / sumaudiod / suminfo
  ├── sumData
  └── sumPlot
       └── sumR / sumPY
@@ -35,28 +48,22 @@ sumUI
                 └── sumBASIC
 </pre></code>
 
-# Install all
+# Current release source versions
 
 <code><pre>
-pip install ./sumcore-0.1.0a1-py3-none-any.whl
-pip install ./sumui-0.1.0a11-py3-none-any.whl
-
-pip install ./sumdata-0.1.0a1-py3-none-any.whl
-pip install ./sumplot-0.1.0a1-py3-none-any.whl
-
-pip install ./sumgui-0.2.0a13-py3-none-any.whl
-pip install ./sumtui-0.8.0a11-py3-none-any.whl
-
-pip install ./sumr-0.1.0a1-py3-none-any.whl
-pip install ./sumpy-0.1.0a1-py3-none-any.whl
-
-pip install ./sumide-0.2.17-py3-none-any.whl
-pip install ./sumx-0.2.16-py3-none-any.whl
-pip install ./sumbasic-0.2.15-py3-none-any.whl
-
-pip install ./sumdiff-0.2.8-py3-none-any.whl
-pip install ./sumdoc-0.2.3-py3-none-any.whl
+sumcore  0.1.0a10
+sumui    0.1.0a13
+sumdata  0.1.0a2
+sumplot  0.1.0a2
+sumgui   0.2.0a19
+sumtui   0.8.0a16
+sumr     0.1.0a7
+sumpy    0.1.0a7
+sumide   0.2.20
+sumx     0.2.21
+sumbasic 0.2.30
+sumdiff  0.2.8
+sumdoc   0.2.3
 </pre></code>
 
 <p align=center><b>- oOo -</b></p>
-

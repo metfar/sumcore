@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumcore
-Version: 0.1.0a9
+Version: 0.1.0a10
 Summary: Core architecture, registry and release metadata for the Sum ecosystem.
 Author-email: William Martinez Bas <metfar@gmail.com>
 License: GPL-2.0-or-later
@@ -13,12 +13,12 @@ Dynamic: license-file
 
 # sumcore
 
-Core architecture, registry and release metadata for the Sum ecosystem.
+Core architecture, registry, diagnostics and shared runtime services for the Sum ecosystem.
 
 ## Shared audio service
 
-`sumcore.audio` owns the Sum tone engine and ZX/GW music parsers. The
-language-neutral facade is available directly:
+`sumcore.audio` owns the Sum tone engine and ZX/GW music parsers. The same
+language-neutral surface is used by sumBASIC, sumPY, sumR and sumX:
 
 ```python
 from sumcore import beep, play, sound, stop_audio;
@@ -29,15 +29,57 @@ play("T180O5cdefgabC");
 stop_audio();
 ```
 
-The package also installs `sumbeep`, `sumplay`, and `sumsound`. On Termux,
-`sumCore` now prefers the native `termux-media-player` command when it is
-available, generating temporary WAV data and letting Android's MediaPlayer own
-the device. Finite tones include a short silent preroll/postroll inside the same
-WAV so Android can open its higher-latency audio path before the requested tone
-begins. The defaults are 400 ms preroll and 100 ms postroll; Termux users can
-tune them without rebuilding with `SUM_TERMUX_AUDIO_PREROLL_MS` and
-`SUM_TERMUX_AUDIO_POSTROLL_MS`. This avoids requiring direct ALSA access from the Unix process. If
-that API is unavailable, the ordinary POSIX/Pygame/terminal fallbacks still
-apply; language semantics remain independent from the selected backend.
+The package installs `sumbeep`, `sumsound` and `sumplay` as command-line
+frontends to that same engine.
+
+## `sumaudiod`
+
+`sumcore` also owns `sumaudiod`, a persistent backend-neutral audio service.
+The protocol carries tone/hold/stop commands rather than PulseAudio-specific
+operations, so frontends do not depend on the host audio API. POSIX systems use
+a private Unix-domain socket. The protocol reserves localhost TCP transport for
+Windows, where a future WASAPI output can replace the POSIX backend without
+changing any Sum language.
+
+The daemon keeps one PCM stream open and writes silence while idle, avoiding
+repeated device startup latency. Its mixer supports named concurrent voices,
+finite tones, held tones and an 8 ms release envelope. Current persistent POSIX
+outputs are attempted in this order when available:
+
+1. PulseAudio through `pacat` (preferred on Termux);
+2. SoX `play` raw PCM;
+3. ALSA `aplay` raw PCM.
+
+On Termux, normal Sum audio calls auto-start `sumaudiod` when possible. On other
+hosts the daemon can be enabled explicitly or started once:
+
+```text
+sumaudiod start
+sumaudiod status
+sumaudiod stop
+```
+
+`SUM_AUDIO_SINK` can select a PulseAudio sink explicitly. Without an override,
+AAudio is preferred when present, then OpenSL ES, then another non-null sink.
+`SUM_AUDIO_DAEMON=0` disables daemon auto-use; `SUM_AUDIO_DAEMON=1` enables
+auto-start on every supported host.
+
+## `suminfo`
+
+`suminfo` reports three intentionally separate views:
+
+- **HARDWARE**: architecture, CPU count, memory and Android audio properties
+  when `termux-audio-info` is available;
+- **SOFTWARE**: OS/kernel/Python, Termux, terminal, Pygame, PulseAudio sinks,
+  available audio commands and installed Sum package versions;
+- **SIMULATED**: the capabilities implemented by Sum itself, including its PCM
+  format/sample rate, audio semantics, polyphony, key-release model and the
+  current `sumaudiod` backend.
+
+Machine-readable output is available with:
+
+```text
+suminfo --json
+```
 
 <p align=center><b>- oOo -</b></p>

@@ -34,6 +34,7 @@ import threading;
 import time;
 import wave;
 import warnings;
+import uuid;
 
 
 MIDDLE_C_HZ = 261.6255653005986;
@@ -106,6 +107,29 @@ class SystemTonePlayer:
         self._hold_backend = None;
         self._termux_media_file = None;
         self._termux_media_lock = threading.Lock();
+        self._daemon_client_cache = None;
+        self._daemon_checked_at = 0.0;
+        self._daemon_voice = uuid.uuid4().hex;
+
+    def _audio_daemon_client(self, start=None):
+        """Return the shared daemon; callers decide whether absence may start it.""";
+        now = time.monotonic();
+        client = self._daemon_client_cache;
+        if client is not None:
+            try:
+                if client.ping(): return client;
+            except Exception: pass;
+            self._daemon_client_cache = None;
+        if now - self._daemon_checked_at < .5: return None;
+        self._daemon_checked_at = now;
+        try:
+            from .audio_daemon import daemon_autostart_enabled, ensure_audio_daemon;
+            if start is None: start = daemon_autostart_enabled();
+            client = ensure_audio_daemon(start=bool(start), timeout=2.0);
+        except Exception:
+            client = None;
+        self._daemon_client_cache = client;
+        return client;
 
     def _ensure_worker(self):
         with self._worker_lock:
@@ -120,6 +144,11 @@ class SystemTonePlayer:
     def stop(self):
         # Cancel the currently sounding tone and invalidate queued requests.
         with self._generation_lock: self._generation += 1;
+        daemon = self._audio_daemon_client(start=False);
+        if daemon is not None:
+            try: daemon.stop(self._daemon_voice);
+            except Exception:
+                self._daemon_client_cache = None;
         with self._active_lock:
             cancel_event = self._active_cancel_event;
             process = self._active_process;
@@ -353,6 +382,15 @@ class SystemTonePlayer:
         self.stop();
         frequency = float(frequency);
         volume = max(0.0, min(3.0, float(volume)));
+        daemon = self._audio_daemon_client();
+        if daemon is not None:
+            try:
+                response = daemon.hold(self._daemon_voice, frequency, volume);
+                if response.get("ok"):
+                    self._hold_backend = "sumaudiod";
+                    return True;
+            except Exception:
+                self._daemon_client_cache = None;
         # If a GUI already initialized the mixer, keep the held note on that
         # device.  This avoids aplay/SoX fighting Pygame for the same sink.
         if self._start_pygame_hold(frequency, volume, initialize=False): return True;
@@ -416,6 +454,13 @@ class SystemTonePlayer:
                 self._tone_queue.task_done();
 
     def _play_blocking(self, frequency, duration, volume=1.0):
+        daemon = self._audio_daemon_client();
+        if daemon is not None:
+            try:
+                response = daemon.tone(self._daemon_voice, frequency, duration, volume, blocking=True);
+                if response.get("ok"): return True;
+            except Exception:
+                self._daemon_client_cache = None;
         if os.name == "nt":
             try:
                 import winsound;
