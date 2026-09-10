@@ -34,14 +34,14 @@ def test_cli_version(capsys):
     from sumcore.cli import main;
     import pytest;
     with pytest.raises(SystemExit) as exc: main(["--version"]);
-    assert exc.value.code==0; assert "sumcore 0.1.0a12" in capsys.readouterr().out;
+    assert exc.value.code==0; assert "sumcore 0.1.0a13" in capsys.readouterr().out;
 
 
 def test_architecture_cli_version(capsys):
     from sumcore.architecture import main;
     import pytest;
     with pytest.raises(SystemExit) as exc: main(["--version"]);
-    assert exc.value.code==0; assert "0.1.0a12" in capsys.readouterr().out;
+    assert exc.value.code==0; assert "0.1.0a13" in capsys.readouterr().out;
 
 def test_sum_compat_aliases():
     from sumcore import basic_boolean, is_null_alias, truth_alias;

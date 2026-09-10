@@ -51,3 +51,100 @@ def test_platform_profile_linux_distribution(monkeypatch):
     monkeypatch.setenv("XDG_CURRENT_DESKTOP", "XFCE");
     profile = info._platform_profile(False);
     assert profile["profile"] == "linux-ubuntu-desktop-x86_64";
+
+
+def test_suminfo_passive_policy_and_windows_preview(monkeypatch):
+    assert info.PASSIVE_POLICY.mutates_state is False;
+    assert info.PASSIVE_POLICY.requires_privilege is False;
+    assert info.PASSIVE_POLICY.uses_network is False;
+    monkeypatch.setattr(info.platform, "system", lambda: "Windows");
+    monkeypatch.setattr(info.platform, "machine", lambda: "AMD64");
+    profile = info._platform_profile(False);
+    assert profile["family"] == "windows";
+    assert profile["support"] == "unsupported";
+    assert profile["privilege_assumption"] == "standard-user";
+    assert profile["profile"] == "windows-preview-AMD64";
+
+
+def test_suminfo_python_provenance_can_be_reclassified_by_dpkg(monkeypatch):
+    class FakeDist:
+        metadata = {"Name": "demo"};
+        version = "2.0rc1";
+        _path = "/usr/lib/python3/dist-packages/demo-2.0rc1.dist-info";
+        def read_text(self, name):
+            if name == "INSTALLER": return "pip\n";
+            if name == "direct_url.json": return None;
+            return None;
+    monkeypatch.setattr(info.importlib.metadata, "distributions", lambda: [FakeDist()]);
+    monkeypatch.setattr(info, "_dpkg_owners", lambda paths: {FakeDist._path: "python3-demo"});
+    packages = info._python_packages(detailed=True);
+    assert packages["count"] == 1;
+    assert packages["items"][0]["origin"] == "os-package";
+    assert packages["items"][0]["owner"] == "python3-demo";
+    assert packages["items"][0]["stability"] == "prerelease";
+
+
+def test_suminfo_local_editable_python_provenance():
+    class FakeDist:
+        metadata = {"Name": "localdemo"};
+        version = "0.1.dev2";
+        _path = "/home/user/project/localdemo.egg-info";
+        def read_text(self, name):
+            if name == "INSTALLER": return "pip\n";
+            if name == "direct_url.json": return '{"url":"file:///home/user/project","dir_info":{"editable":true}}';
+            return None;
+    record = info._python_distribution_record(FakeDist());
+    assert record["origin"] == "pip-editable";
+    assert record["stability"] == "development";
+
+
+def test_suminfo_report_summary_groups_and_snapshots(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path));
+    monkeypatch.setattr(info, "_platform_group", lambda: {"profile": {"profile": "linux-test", "support": "supported", "architecture": "x86_64"}, "system": "Linux"});
+    monkeypatch.setattr(info, "_hardware_group", lambda: {"cpu_count": 4, "memory_total_bytes": 8 * 1024 ** 3, "processor": "test"});
+    report = info.collect_report(groups=("platform", "hardware"), detailed=False);
+    text = info.render_report(report, detailed=False);
+    assert "PLATFORM" in text and "linux-test" in text;
+    assert "HARDWARE" in text and "8.0 GiB" in text;
+    path = info.save_snapshot("baseline", report);
+    assert path.is_file();
+    loaded = info.load_snapshot("baseline");
+    changed = json.loads(json.dumps(loaded));
+    changed["groups"]["hardware"]["data"]["cpu_count"] = 8;
+    diff = info.compare_reports(loaded, changed, groups=("hardware",));
+    assert any(item["path"].endswith("cpu_count") for item in diff["changes"]);
+
+
+def test_suminfo_theme_inventory_has_explicit_subsystems(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path));
+    monkeypatch.setenv("PREFIX", str(tmp_path / "prefix"));
+    result = info._theme_inventory();
+    assert set(("sum", "gtk", "gnome", "xfce", "kde", "terminal")).issubset(result["groups"]);
+    for value in result["groups"].values():
+        assert "count" in value and "items" in value and "paths" in value;
+
+
+def test_suminfo_interactive_frontend_dispatch(monkeypatch):
+    import sys;
+    import types;
+    report = {"groups": {"platform": {"status": "ok", "data": {}}}};
+    called = {};
+    module = types.ModuleType("sumtui.tools.info_view");
+    module.run = lambda value, groups=None, detailed=False: called.update({"value": value, "groups": groups, "detailed": detailed}) or 7;
+    monkeypatch.setitem(sys.modules, "sumtui.tools.info_view", module);
+    assert info._interactive_view("tui", report, ("platform",), False) == 7;
+    assert called["groups"] == ("platform",);
+    assert called["detailed"] is False;
+
+
+def test_suminfo_distro_installer_metadata_is_os_managed(monkeypatch):
+    class FakeDist:
+        metadata = {"Name": "distrodemo"};
+        version = "1.2.3";
+        _path = "/usr/lib/python3/dist-packages/distrodemo-1.2.3.dist-info";
+        def read_text(self, name):
+            if name == "INSTALLER": return "debian\n";
+            return None;
+    record = info._python_distribution_record(FakeDist());
+    assert record["origin"] == "os-package";
+    assert record["source"] == "debian";

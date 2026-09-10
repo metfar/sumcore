@@ -24,14 +24,14 @@ import argparse;
 import csv;
 
 DEFAULT_ARCHITECTURE = {
-    "sumCore": {"version":"0.1.0a12", "requires":[], "optional":[], "role":"core architecture and registries"},
+    "sumCore": {"version":"0.1.0a13", "requires":[], "optional":[], "role":"core architecture and registries"},
     "sumData": {"version":"0.1.0a2", "requires":["sumCore"], "optional":["pyreadr"], "role":"common data objects, datasets and RDS"},
     "sumPlot": {"version":"0.1.0a2", "requires":["sumCore","sumUI"], "optional":["matplotlib","seaborn"], "role":"plot semantics and PlotSpec"},
     "sumR": {"version":"0.1.0a7", "requires":["sumCore","sumData","sumPlot"], "optional":["Rscript"], "role":"R-compatible runtime"},
     "sumPY": {"version":"0.1.0a9", "requires":["sumCore","sumData","sumPlot"], "optional":[], "role":"Python SUM runtime"},
-    "sumUI": {"version":"0.1.0a15", "requires":[], "optional":[], "role":"backend-neutral UI contracts"},
-    "sumTUI": {"version":"0.8.0a19", "requires":["sumUI"], "optional":["sumGUI"], "role":"terminal presentation"},
-    "sumGUI": {"version":"0.2.0a22", "requires":["sumUI"], "optional":["matplotlib","seaborn"], "role":"Pygame presentation"},
+    "sumUI": {"version":"0.1.0a16", "requires":[], "optional":[], "role":"backend-neutral UI contracts"},
+    "sumTUI": {"version":"0.8.0a20", "requires":["sumUI"], "optional":["sumGUI"], "role":"terminal presentation"},
+    "sumGUI": {"version":"0.2.0a23", "requires":["sumUI"], "optional":["matplotlib","seaborn"], "role":"Pygame presentation"},
     "sumIDE": {"version":"0.2.20", "requires":["sumUI","sumTUI"], "optional":["sumGUI","sumR","sumPY"], "role":"common multi-language IDE"},
     "sumBASIC": {"version":"0.2.31", "requires":["sumUI","sumTUI","sumIDE","sumData","sumPlot"], "optional":["sumGUI"], "role":"BASIC runtime"},
     "sumX": {"version":"0.2.21", "requires":["sumUI","sumTUI","sumIDE","sumData"], "optional":["sumGUI"], "role":"xBase runtime"},

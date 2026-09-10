@@ -51,12 +51,12 @@ sumUI
 # Current release source versions
 
 <code><pre>
-sumcore  0.1.0a12
-sumui    0.1.0a15
+sumcore  0.1.0a13
+sumui    0.1.0a16
 sumdata  0.1.0a2
 sumplot  0.1.0a2
-sumgui   0.2.0a22
-sumtui   0.8.0a19
+sumgui   0.2.0a23
+sumtui   0.8.0a20
 sumr     0.1.0a7
 sumpy    0.1.0a9
 sumide   0.2.20
