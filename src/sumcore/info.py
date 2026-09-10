@@ -91,15 +91,46 @@ def _pygame_info():
 
 
 def _pulse_info():
-    server = _command_text(["pactl", "info"]);
+    server = PersistentPCMOutput.pulse_server_info();
     sinks = PersistentPCMOutput.pulse_sinks();
     return {
-        "available": bool(shutil.which("pactl") and server is not None),
+        "available": bool(server is not None),
         "pacat": shutil.which("pacat"),
         "server_info": server,
         "sinks": sinks,
+        "default_sink": PersistentPCMOutput.pulse_default_sink(),
         "preferred_sink": PersistentPCMOutput.preferred_pulse_sink(),
     };
+
+
+def _os_release():
+    values = {};
+    try:
+        for line in open("/etc/os-release", "r", encoding="utf-8", errors="replace"):
+            text = line.strip();
+            if not text or text.startswith("#") or "=" not in text: continue;
+            key, value = text.split("=", 1);
+            values[key] = value.strip().strip('"').strip("'");
+    except OSError:
+        pass;
+    return values;
+
+
+def _platform_profile(android=None):
+    architecture = platform.machine() or "unknown";
+    is_android = bool(os.environ.get("ANDROID_ROOT") or os.environ.get("TERMUX_VERSION")) if android is None else bool(android);
+    if is_android:
+        termux = str(os.environ.get("TERMUX_VERSION", "")).strip();
+        distribution = "google-play" if termux.lower().startswith("googleplay") else ("fdroid" if termux else "unknown");
+        environment = "termux" if termux or "/com.termux/" in str(os.environ.get("PREFIX", "")) else "android";
+        profile = "android-{}-{}-{}".format(environment, distribution, architecture);
+        return {"family": "android", "environment": environment, "distribution": distribution, "architecture": architecture, "profile": profile};
+    system = (platform.system() or "unknown").lower();
+    release = _os_release();
+    distribution = str(release.get("ID") or "unknown").lower();
+    environment = "desktop" if bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY") or os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("DESKTOP_SESSION")) else "console";
+    profile = "{}-{}-{}-{}".format(system, distribution, environment, architecture);
+    return {"family": system, "environment": environment, "distribution": distribution, "architecture": architecture, "profile": profile};
 
 
 def _daemon_info():
@@ -124,6 +155,7 @@ def collect_info():
         "android_audio": termux_audio,
     };
     software = {
+        "platform_profile": _platform_profile(android),
         "os": platform.system(),
         "os_release": platform.release(),
         "platform": platform.platform(),

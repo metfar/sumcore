@@ -71,3 +71,18 @@ def test_daemon_protocol_roundtrip(tmp_path):
     thread.join(timeout=1.0);
     assert not thread.is_alive();
     assert not os.path.exists(endpoint["path"]);
+
+
+def test_pulse_candidates_require_live_server(monkeypatch):
+    from sumcore.audio_daemon import PersistentPCMOutput;
+    monkeypatch.setattr("sumcore.audio_daemon.shutil.which", lambda name: "/usr/bin/{}".format(name) if name in ("pacat", "pactl") else None);
+    monkeypatch.setattr(PersistentPCMOutput, "pulse_server_info", staticmethod(lambda: None));
+    monkeypatch.setattr(PersistentPCMOutput, "preferred_pulse_sink", classmethod(lambda cls: None));
+    assert not any(item[0] == "pulseaudio/pacat" for item in PersistentPCMOutput()._candidate_commands());
+
+
+def test_preferred_pulse_sink_prefers_default_over_dummy(monkeypatch):
+    from sumcore.audio_daemon import PersistentPCMOutput;
+    monkeypatch.setattr(PersistentPCMOutput, "pulse_sinks", staticmethod(lambda: [{"name": "dummy_source_capture"}, {"name": "speaker_sink"}]));
+    monkeypatch.setattr(PersistentPCMOutput, "pulse_default_sink", classmethod(lambda cls: "speaker_sink"));
+    assert PersistentPCMOutput.preferred_pulse_sink() == "speaker_sink";

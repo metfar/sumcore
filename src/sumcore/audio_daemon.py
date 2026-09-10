@@ -144,22 +144,56 @@ class PersistentPCMOutput:
                 sinks.append(item);
         return sinks;
 
+    @staticmethod
+    def pulse_server_info():
+        pactl = shutil.which("pactl");
+        if not pactl: return None;
+        try:
+            result = subprocess.run([pactl, "info"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=1.5, check=False);
+        except (OSError, subprocess.SubprocessError):
+            return None;
+        return result.stdout.strip() if result.returncode == 0 else None;
+
+    @classmethod
+    def pulse_default_sink(cls):
+        pactl = shutil.which("pactl");
+        if not pactl: return None;
+        try:
+            result = subprocess.run([pactl, "get-default-sink"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=1.5, check=False);
+            if result.returncode == 0 and result.stdout.strip(): return result.stdout.strip();
+        except (OSError, subprocess.SubprocessError):
+            pass;
+        server = cls.pulse_server_info();
+        if server:
+            for line in server.splitlines():
+                if line.lower().startswith("default sink:"):
+                    value = line.split(":", 1)[1].strip();
+                    if value: return value;
+        return None;
+
+    @classmethod
+    def pulse_available(cls):
+        return bool(shutil.which("pacat") and cls.pulse_server_info() is not None);
+
     @classmethod
     def preferred_pulse_sink(cls):
         explicit = str(os.environ.get("SUM_AUDIO_SINK", "")).strip();
         if explicit: return explicit;
         names = [item["name"] for item in cls.pulse_sinks()];
+        default = cls.pulse_default_sink();
+        if default and default in names: return default;
         for wanted in ("AAudio_sink", "OpenSL_ES_sink"):
             if wanted in names: return wanted;
         for name in names:
-            if "auto_null" not in name.lower(): return name;
-        return None;
+            lowered = name.lower();
+            if "auto_null" not in lowered and "dummy" not in lowered: return name;
+        return names[0] if names else None;
 
     def _candidate_commands(self):
         result = [];
         pacat = shutil.which("pacat");
         sink = self.preferred_pulse_sink();
-        if pacat:
+        if pacat and self.pulse_available():
             command = [pacat, "--playback", "--raw", "--format=s16le", "--rate={}".format(self.sample_rate), "--channels={}".format(self.channels), "--client-name=Sum", "--stream-name=SumAudio"];
             if sink: command.append("--device={}".format(sink));
             result.append(("pulseaudio/pacat", sink, command));
