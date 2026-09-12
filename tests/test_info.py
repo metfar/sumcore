@@ -148,3 +148,13 @@ def test_suminfo_distro_installer_metadata_is_os_managed(monkeypatch):
     record = info._python_distribution_record(FakeDist());
     assert record["origin"] == "os-package";
     assert record["source"] == "debian";
+
+
+def test_suminfo_reads_pygame_version_without_importing_pygame(monkeypatch):
+    import sys;
+    monkeypatch.delitem(sys.modules, "pygame", raising=False);
+    real_version = info.importlib.metadata.version;
+    monkeypatch.setattr(info.importlib.metadata, "version", lambda name: "2.6.1" if name == "pygame" else real_version(name));
+    value = info._pygame_info();
+    assert value == {"available": True, "version": "2.6.1", "mixer": None};
+    assert "pygame" not in sys.modules;

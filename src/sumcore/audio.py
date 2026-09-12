@@ -234,6 +234,10 @@ class SystemTonePlayer:
     @staticmethod
     def _pygame_module():
         try:
+            # Pygame provides an explicit switch for its import-time support
+            # prompt.  Prefer it over globally redirecting stdout/stderr; the
+            # latter can accidentally hide useful output from SUM callers.
+            os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1");
             with warnings.catch_warnings(), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 warnings.simplefilter("ignore");
                 import pygame;

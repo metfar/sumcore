@@ -125,11 +125,23 @@ def _installed_sum_versions():
 
 
 def _pygame_info():
+    """Return pygame information without importing pygame as a side effect.
+
+    ``pygame`` prints its support prompt when imported unless the process has
+    disabled it beforehand.  ``suminfo`` is an observer, so package metadata
+    is preferred here.  Mixer state is reported only when another component
+    has already loaded pygame in this process.
+    """;
     try:
-        import pygame;
-        return {"available": True, "version": getattr(pygame.version, "ver", None), "mixer": pygame.mixer.get_init()};
-    except Exception:
+        version = importlib.metadata.version("pygame");
+    except importlib.metadata.PackageNotFoundError:
         return {"available": False, "version": None, "mixer": None};
+    mixer = None;
+    pygame = sys.modules.get("pygame");
+    if pygame is not None:
+        try: mixer = pygame.mixer.get_init();
+        except Exception: mixer = None;
+    return {"available": True, "version": version, "mixer": mixer};
 
 
 def _pulse_info():
