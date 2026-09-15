@@ -158,3 +158,31 @@ def test_suminfo_reads_pygame_version_without_importing_pygame(monkeypatch):
     value = info._pygame_info();
     assert value == {"available": True, "version": "2.6.1", "mixer": None};
     assert "pygame" not in sys.modules;
+
+
+def test_suminfo_portable_identity_linux(monkeypatch):
+    monkeypatch.delenv("ANDROID_ROOT", raising=False);
+    monkeypatch.delenv("TERMUX_VERSION", raising=False);
+    monkeypatch.setattr(info.platform, "system", lambda: "Linux");
+    monkeypatch.setattr(info.platform, "release", lambda: "7.0.0-test");
+    monkeypatch.setattr(info.platform, "version", lambda: "#1 TEST");
+    monkeypatch.setattr(info.platform, "machine", lambda: "x86_64");
+    monkeypatch.setattr(info.platform, "node", lambda: "host1");
+    monkeypatch.setattr(info, "_os_release", lambda: {"ID": "ubuntu", "NAME": "Ubuntu", "PRETTY_NAME": "Ubuntu 26.04 LTS", "VERSION_ID": "26.04", "VERSION_CODENAME": "resolute"});
+    monkeypatch.setattr(info, "collect_uptime", lambda: {"uptime_seconds": 12.5, "boot_time_utc": "2026-01-01T00:00:00+00:00", "load_average": (0.1, 0.2, 0.3)});
+    data = info.collect_identity();
+    assert data["os"]["distributor"] == "Ubuntu";
+    assert data["os"]["release"] == "26.04";
+    assert data["os"]["codename"] == "resolute";
+    assert data["kernel"]["release"] == "7.0.0-test";
+    assert data["machine"]["architecture"] == "x86_64";
+    assert data["runtime"]["uptime_seconds"] == 12.5;
+    assert info.identity_field(data, "os.release") == "26.04";
+    assert "Ubuntu 26.04 LTS" in info.render_identity_short(data);
+
+
+def test_suminfo_uptime_is_nonnegative():
+    value = info.collect_uptime();
+    if value["uptime_seconds"] is not None:
+        assert value["uptime_seconds"] >= 0;
+        assert value["boot_time_utc"];

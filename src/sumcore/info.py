@@ -60,7 +60,7 @@ import sys;
 from . import __version__;
 from .audio_daemon import AudioDaemonClient, DEFAULT_RELEASE_MS, DEFAULT_SAMPLE_RATE, PersistentPCMOutput, default_endpoint;
 
-_SUM_PACKAGES = ("sumcore", "sumui", "sumtui", "sumgui", "sumide", "sumbasic", "sumx", "sumpy", "sumr", "sumdata", "sumplot", "sumdiff", "sumdoc");
+_SUM_PACKAGES = ("sumcore", "sumui", "sumtui", "sumgui", "sumide", "sumbasic", "sumbash", "sumx", "sumpy", "sumr", "sumdata", "sumplot", "sumdiff", "sumdoc");
 GROUPS = ("platform", "hardware", "software", "terminal", "audio", "packages", "themes", "sum", "simulated");
 
 
@@ -410,6 +410,186 @@ def _theme_inventory():
     return {"active": {"sum": active_sum, "desktop": active_desktop}, "groups": groups, "unique_count": len(set(name.casefold() for group in groups.values() for name in group["items"]))};
 
 
+
+def _first_text(path):
+    try:
+        return Path(path).read_text(encoding="utf-8", errors="replace").strip();
+    except OSError:
+        return None;
+
+
+def _getprop(name):
+    result = _command_text(["getprop", str(name)], timeout=1.0);
+    return result or None;
+
+
+def _windows_identity():
+    release, version, service_pack, unused_ptype = platform.win32_ver();
+    edition = None;
+    try: edition = platform.win32_edition();
+    except (AttributeError, OSError): pass;
+    product = "Windows" + ((" " + release) if release else "");
+    description = product + ((" " + edition) if edition and edition.lower() not in product.lower() else "");
+    return {
+        "platform": "windows",
+        "os": {
+            "distributor": "Microsoft",
+            "product": product,
+            "description": description,
+            "release": release or None,
+            "edition": edition,
+            "codename": None,
+            "build": version or platform.version() or None,
+            "service_pack": service_pack or None,
+            "patch_level": None,
+        },
+        "kernel": {
+            "name": "Windows NT",
+            "release": platform.version() or version or None,
+            "version": platform.platform() or None,
+        },
+        "machine": {
+            "architecture": platform.machine() or None,
+            "hostname": platform.node() or None,
+            "manufacturer": None,
+            "model": None,
+        },
+        "runtime": {
+            "api_level": None,
+            "abi": platform.machine() or None,
+        },
+    };
+
+
+def _android_identity():
+    release = _getprop("ro.build.version.release") or platform.release();
+    patch = _getprop("ro.build.version.security_patch");
+    api = _getprop("ro.build.version.sdk");
+    build = _getprop("ro.build.id") or _getprop("ro.build.display.id");
+    manufacturer = _getprop("ro.product.manufacturer");
+    model = _getprop("ro.product.model");
+    abi = _getprop("ro.product.cpu.abi") or platform.machine() or None;
+    description = "Android {}".format(release) if release else "Android";
+    return {
+        "platform": "android",
+        "os": {
+            "distributor": "Android",
+            "product": "Android",
+            "description": description,
+            "release": release or None,
+            "edition": None,
+            "codename": _getprop("ro.build.version.codename"),
+            "build": build,
+            "service_pack": None,
+            "patch_level": patch,
+        },
+        "kernel": {
+            "name": platform.system() or "Linux",
+            "release": platform.release() or None,
+            "version": platform.version() or None,
+        },
+        "machine": {
+            "architecture": platform.machine() or abi,
+            "hostname": platform.node() or None,
+            "manufacturer": manufacturer,
+            "model": model,
+        },
+        "runtime": {
+            "api_level": int(api) if str(api or "").isdigit() else api,
+            "abi": abi,
+        },
+    };
+
+
+def _posix_identity():
+    release = _os_release();
+    distributor = release.get("NAME") or release.get("ID") or platform.system();
+    product = release.get("NAME") or distributor;
+    description = release.get("PRETTY_NAME") or release.get("VERSION") or product;
+    return {
+        "platform": (platform.system() or "unknown").lower(),
+        "os": {
+            "distributor": distributor,
+            "product": product,
+            "description": description,
+            "release": release.get("VERSION_ID") or None,
+            "edition": release.get("VARIANT") or release.get("VARIANT_ID") or None,
+            "codename": release.get("VERSION_CODENAME") or release.get("UBUNTU_CODENAME") or None,
+            "build": release.get("BUILD_ID") or release.get("IMAGE_ID") or None,
+            "service_pack": None,
+            "patch_level": None,
+        },
+        "kernel": {
+            "name": platform.system() or None,
+            "release": platform.release() or None,
+            "version": platform.version() or None,
+        },
+        "machine": {
+            "architecture": platform.machine() or None,
+            "hostname": platform.node() or None,
+            "manufacturer": None,
+            "model": None,
+        },
+        "runtime": {
+            "api_level": None,
+            "abi": platform.machine() or None,
+        },
+    };
+
+
+def collect_uptime():
+    seconds = None;
+    try:
+        raw = _first_text("/proc/uptime");
+        if raw: seconds = float(raw.split()[0]);
+    except (ValueError, IndexError):
+        seconds = None;
+    if seconds is None and platform.system().lower() == "windows":
+        try:
+            import ctypes;
+            seconds = float(ctypes.windll.kernel32.GetTickCount64()) / 1000.0;
+        except Exception:
+            seconds = None;
+    boot_time = None;
+    if seconds is not None:
+        boot_time = datetime.fromtimestamp(datetime.now(timezone.utc).timestamp() - seconds, timezone.utc).isoformat();
+    load = None;
+    try: load = tuple(float(value) for value in os.getloadavg());
+    except (AttributeError, OSError): pass;
+    return {"uptime_seconds": seconds, "boot_time_utc": boot_time, "load_average": load};
+
+
+def collect_identity():
+    is_android = bool(os.environ.get("ANDROID_ROOT") or os.environ.get("TERMUX_VERSION"));
+    if is_android: identity = _android_identity();
+    elif platform.system().lower() == "windows": identity = _windows_identity();
+    else: identity = _posix_identity();
+    identity["runtime"].update(collect_uptime());
+    return identity;
+
+
+def identity_field(identity, path):
+    current = identity;
+    for part in str(path or "").split("."):
+        if not part: continue;
+        if not isinstance(current, dict) or part not in current:
+            raise KeyError(path);
+        current = current[part];
+    return current;
+
+
+def render_identity_short(identity):
+    osdata = identity.get("os", {});
+    kernel = identity.get("kernel", {});
+    machine = identity.get("machine", {});
+    bits = [osdata.get("description") or osdata.get("product") or identity.get("platform")];
+    if osdata.get("patch_level"): bits.append("patch {}".format(osdata.get("patch_level")));
+    core = "{} {}".format(kernel.get("name") or "kernel", kernel.get("release") or "").strip();
+    if core: bits.append(core);
+    if machine.get("architecture"): bits.append(machine.get("architecture"));
+    return " / ".join(str(bit) for bit in bits if bit);
+
+
 def _platform_group():
     android = bool(os.environ.get("ANDROID_ROOT") or os.environ.get("TERMUX_VERSION"));
     profile = _platform_profile(android);
@@ -421,6 +601,7 @@ def _platform_group():
         "version": platform.version(),
         "platform": platform.platform(),
         "os_release": release,
+        "identity": collect_identity(),
     };
 
 
@@ -556,8 +737,8 @@ def _memory_text(value):
 
 def summary_rows(group, data):
     if group == "platform":
-        profile = data.get("profile", {});
-        return [("profile", profile.get("profile")), ("support", profile.get("support")), ("system", data.get("system")), ("architecture", profile.get("architecture"))];
+        profile = data.get("profile", {}); identity = data.get("identity", {}); osdata = identity.get("os", {}); kernel = identity.get("kernel", {}); machine = identity.get("machine", {});
+        return [("profile", profile.get("profile")), ("support", profile.get("support")), ("system", data.get("system")), ("distributor", osdata.get("distributor")), ("description", osdata.get("description")), ("os.release", osdata.get("release")), ("os.patch_level", osdata.get("patch_level")), ("kernel.release", kernel.get("release")), ("architecture", machine.get("architecture") or profile.get("architecture"))];
     if group == "hardware": return [("cpu_count", data.get("cpu_count")), ("memory", _memory_text(data.get("memory_total_bytes"))), ("processor", data.get("processor"))];
     if group == "software": return [("python", data.get("python")), ("implementation", data.get("implementation")), ("pygame", (data.get("pygame") or {}).get("version"))];
     if group == "terminal": return [("TERM", data.get("TERM")), ("desktop", data.get("desktop")), ("tty", data.get("tty"))];
@@ -582,7 +763,7 @@ def summary_rows(group, data):
     if group == "sum":
         packages = data.get("packages", {});
         rows = [("installed", len(packages))];
-        for name in ("sumcore", "sumui", "sumtui", "sumgui", "sumide", "sumbasic", "sumx"): 
+        for name in ("sumcore", "sumui", "sumtui", "sumgui", "sumide", "sumbasic", "sumbash", "sumx"): 
             if name in packages: rows.append((name, packages[name]));
         return rows;
     if group == "simulated": return [("audio.sample_rate", data.get("audio", {}).get("internal_sample_rate")), ("audio.polyphony", data.get("audio", {}).get("polyphony")), ("keyboard.keyup", data.get("keyboard", {}).get("gui_keyup"))];
@@ -713,6 +894,8 @@ def main(argv=None):
     parser.add_argument("--list-groups", action="store_true", help="list available information groups");
     parser.add_argument("--search", default=None, help="filter rendered keys/values");
     parser.add_argument("--json", action="store_true", help="emit machine-readable JSON");
+    parser.add_argument("--short", action="store_true", help="show one portable identity line");
+    parser.add_argument("--field", metavar="PATH", help="print one portable identity field, for example os.release");
     front = parser.add_mutually_exclusive_group();
     front.add_argument("--tui", action="store_true", help="show information in a tabbed sumTUI viewer");
     front.add_argument("--gui", action="store_true", help="show information in a tabbed sumGUI viewer");
@@ -722,6 +905,18 @@ def main(argv=None):
     args = parser.parse_args(argv);
     if args.list_groups:
         print("\n".join(GROUPS));
+        return 0;
+    if args.short or args.field:
+        identity = collect_identity();
+        if args.short:
+            print(render_identity_short(identity));
+            return 0;
+        try: value = identity_field(identity, args.field);
+        except KeyError:
+            print("suminfo: unknown field: {}".format(args.field), file=sys.stderr);
+            return 2;
+        if isinstance(value, (dict, list, tuple)): print(json.dumps(value, ensure_ascii=False, sort_keys=True));
+        elif value is not None: print(value);
         return 0;
     groups = tuple(args.group or GROUPS);
     detailed = bool(args.all or args.group);

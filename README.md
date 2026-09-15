@@ -72,6 +72,11 @@ suminfo --group themes
 suminfo --list-groups
 suminfo --search python
 suminfo --json
+suminfo --short
+suminfo --field os.distributor
+suminfo --field os.release
+suminfo --field kernel.release
+suminfo --field machine.architecture
 ```
 
 The structured groups are `platform`, `hardware`, `software`, `terminal`,
@@ -90,6 +95,9 @@ suminfo --tui
 suminfo --gui
 suminfo --gui --group themes
 ```
+
+
+The portable identity view uses the same vocabulary on Linux, Windows and Android: distributor/product/description/release/edition/codename/build/service pack/patch level, kernel name/release/version, machine architecture/hostname and runtime API/ABI. Unsupported fields remain empty instead of being invented. Uptime and boot time are also exposed through the identity runtime data.
 
 Snapshots preserve the structured `sum.info/1` model so later comparisons are
 semantic rather than line-oriented:
