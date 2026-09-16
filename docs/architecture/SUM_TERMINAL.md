@@ -45,3 +45,13 @@ Global shortcut registration belongs to `sumKeyboard`, not to terminal rendering
 Windows ConPTY, native Windows global-hotkey registration, Android presentation and richer VT compatibility remain later platform slices.
 
 <p align=center><b>- oOo -</b></p>
+
+## 0.1.0a3 terminal-usability slice
+
+The graphical terminal now renders the normal ANSI/xterm color paths expected by interactive shells, including bold/bright ANSI base colors, 256-color SGR and true-color SGR already represented by `TerminalScreen`. The default `sumbash` `ls` also supplies a built-in GNU-like color palette when `LS_COLORS` is not defined, while `--color=never` remains authoritative.
+
+Preferences now expose the terminal font family/name and size in addition to the drop-down shortcut, height, width and opacity. Applying preferences reloads the active drop-down font and recalculates the PTY rows/columns without restarting the shell session. Command-line one-shot overrides are available through `--font` and `--font-size`.
+
+`sumbash` 0.1.0a16 strengthens `source` / `.` path resolution through the common filesystem layer and keeps sourced assignments, aliases and ANSI `PS1` values in the current shell.
+
+<p align=center><b>- oOo -</b></p>

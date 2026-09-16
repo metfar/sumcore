@@ -52,7 +52,7 @@ sumpy        0.1.0a9
 sumide       0.2.22
 sumx         0.2.21
 sumbasic     0.2.32
-sumbash      0.1.0a15
+sumbash      0.1.0a16
 sumdiff      0.2.8
 sumdoc       0.2.3
 sumbuild     0.1.0a41
@@ -61,4 +61,4 @@ sumkeyboard  0.1.0a1
 
 <p align=center><b>- oOo -</b></p>
 
-sumterminal  0.1.0a1    requires: sumfsa>=0.1.0a1, sumio>=0.1.0a1, sumbash>=0.1.0a15
+sumterminal  0.1.0a3    requires: sumfsa>=0.1.0a1, sumio>=0.1.0a1, sumbash>=0.1.0a15

@@ -24,7 +24,7 @@ import argparse;
 import csv;
 
 DEFAULT_ARCHITECTURE = {
-    "sumCore": {"version":"0.1.0a18", "requires":[], "optional":[], "role":"core architecture, identity and shared services"},
+    "sumCore": {"version":"0.1.0a19", "requires":[], "optional":[], "role":"core architecture, identity and shared services"},
     "sumFSA": {"version":"0.1.0a1", "requires":[], "optional":[], "role":"logical filesystem, mounts, volumes and locations"},
     "sumIO": {"version":"0.1.0a1", "requires":["sumFSA"], "optional":["pyserial"], "role":"capability-based files, streams, pipes and serial I/O"},
     "sumData": {"version":"0.1.0a2", "requires":["sumCore"], "optional":["pyreadr"], "role":"common data objects, datasets and RDS"},
@@ -37,8 +37,8 @@ DEFAULT_ARCHITECTURE = {
     "sumIDE": {"version":"0.2.22", "requires":["sumUI","sumTUI"], "optional":["sumGUI","sumR","sumPY"], "role":"common multi-language IDE"},
     "sumBASIC": {"version":"0.2.32", "requires":["sumCore","sumUI","sumTUI","sumIDE","sumX","sumData","sumPlot"], "optional":["sumGUI"], "role":"BASIC runtime"},
     "sumX": {"version":"0.2.21", "requires":["sumCore","sumUI","sumTUI","sumIDE","sumData"], "optional":["sumGUI"], "role":"xBase runtime"},
-    "sumbash": {"version":"0.1.0a15", "requires":["sumCore"], "optional":[], "role":"portable shell and multicall toolbox"},
-    "sumTerminal": {"version":"0.1.0a2", "requires":["sumFSA","sumIO","sumbash","sumGUI","sumKeyboard"], "optional":[], "role":"terminal/session engine, graphical frontend and drop-down host"},
+    "sumbash": {"version":"0.1.0a16", "requires":["sumCore"], "optional":[], "role":"portable shell and multicall toolbox"},
+    "sumTerminal": {"version":"0.1.0a3", "requires":["sumFSA","sumIO","sumbash","sumGUI","sumKeyboard"], "optional":[], "role":"terminal/session engine, ANSI graphical frontend, configurable fonts and drop-down host"},
     "sumdiff": {"version":"0.2.8", "requires":["sumUI","sumTUI"], "optional":["sumGUI"], "role":"compare and merge"},
     "sumdoc": {"version":"0.2.3", "requires":[], "optional":[], "role":"document conversion and help source tooling"},
     "sumbuild": {"version":"0.1.0a41", "requires":[], "optional":[], "role":"host/Android build orchestration and runtime staging"},
