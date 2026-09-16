@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumcore
-Version: 0.1.0a14
+Version: 0.1.0a16
 Summary: Core architecture, registry and release metadata for the Sum ecosystem.
 Author-email: William Martinez Bas <metfar@gmail.com>
 License: GPL-2.0-or-later
@@ -71,20 +71,60 @@ auto-start on every supported host.
 
 ## `suminfo`
 
-`suminfo` reports three intentionally separate views:
-
-- **HARDWARE**: architecture, CPU count, memory and Android audio properties
-  when `termux-audio-info` is available;
-- **SOFTWARE**: OS/kernel/Python, Termux, terminal, Pygame, PulseAudio sinks,
-  available audio commands and installed Sum package versions;
-- **SIMULATED**: the capabilities implemented by Sum itself, including its PCM
-  format/sample rate, audio semantics, polyphony, key-release model and the
-  current `sumaudiod` backend.
-
-Machine-readable output is available with:
+`suminfo` is a passive observer: collectors query local state without refreshing
+repositories, installing/removing software, starting services, changing
+configuration, or requesting privilege elevation.  The default command is a
+compact overview; `-a/--all` expands every section.
 
 ```text
+suminfo
+suminfo -a
+suminfo --group audio
+suminfo --group packages
+suminfo --group themes
+suminfo --list-groups
+suminfo --search python
 suminfo --json
+suminfo --short
+suminfo --field os.distributor
+suminfo --field os.release
+suminfo --field kernel.release
+suminfo --field machine.architecture
 ```
+
+The structured groups are `platform`, `hardware`, `software`, `terminal`,
+`audio`, `packages`, `themes`, `sum`, and `simulated`.  Explicit `--group`
+requests are detailed even without `--all`.  Package inspection distinguishes
+Python metadata/provenance (`pip`, local/editable, VCS, direct/unknown and,
+when `dpkg-query` owns the installed files, OS-managed packages) and reports
+APT/dpkg or Termux pkg/APT/dpkg inventory without network refreshes.
+
+Theme inventory lists SUM, GTK, GNOME shell, XFCE, KDE and terminal schemes
+plus their discovered search paths.  Optional frontends present the same
+report in tabs:
+
+```text
+suminfo --tui
+suminfo --gui
+suminfo --gui --group themes
+```
+
+
+The portable identity view uses the same vocabulary on Linux, Windows and Android: distributor/product/description/release/edition/codename/build/service pack/patch level, kernel name/release/version, machine architecture/hostname and runtime API/ABI. Unsupported fields remain empty instead of being invented. Uptime and boot time are also exposed through the identity runtime data.
+
+Snapshots preserve the structured `sum.info/1` model so later comparisons are
+semantic rather than line-oriented:
+
+```text
+suminfo --save baseline
+suminfo --compare baseline
+suminfo --save after-update
+suminfo --compare baseline after-update --group packages
+```
+
+Windows is recognised only as a standard-user, unsupported preview.  No
+Administrator/UAC, Registry inventory or Windows package-manager support is
+claimed yet; the code contains explicit extension points for a future tested
+port.
 
 <p align=center><b>- oOo -</b></p>

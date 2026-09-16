@@ -1,0 +1,97 @@
+schema: sum.architecture/1
+packages:
+  sumCore:
+    version: 0.1.0a17
+    role: core architecture, identity and shared services
+    requires: []
+    optional: []
+  sumFSA:
+    version: 0.1.0a1
+    role: logical filesystem, mounts, volumes and locations
+    requires: []
+    optional: []
+  sumIO:
+    version: 0.1.0a1
+    role: capability-based files, streams, pipes and serial I/O
+    requires: [sumFSA]
+    optional: [pyserial]
+  sumData:
+    version: 0.1.0a2
+    role: common data objects, datasets and RDS
+    requires: [sumCore]
+    optional: [pyreadr]
+  sumPlot:
+    version: 0.1.0a2
+    role: plot semantics and PlotSpec
+    requires: [sumCore, sumUI]
+    optional: [matplotlib, seaborn]
+  sumR:
+    version: 0.1.0a7
+    role: R-compatible runtime
+    requires: [sumCore, sumUI, sumTUI, sumData, sumPlot]
+    optional: [sumGUI, Rscript]
+  sumPY:
+    version: 0.1.0a9
+    role: Python SUM runtime
+    requires: [sumCore, sumUI, sumTUI, sumData, sumPlot]
+    optional: []
+  sumUI:
+    version: 0.1.0a16
+    role: backend-neutral UI contracts
+    requires: []
+    optional: []
+  sumTUI:
+    version: 0.8.0a21
+    role: terminal presentation
+    requires: [sumUI]
+    optional: [sumGUI]
+  sumGUI:
+    version: 0.2.0a24
+    role: Pygame presentation
+    requires: [sumCore, sumUI]
+    optional: [matplotlib, seaborn, sumPlot, sumData]
+  sumIDE:
+    version: 0.2.22
+    role: common multi-language IDE
+    requires: [sumUI, sumTUI]
+    optional: [sumGUI, sumR, sumPY]
+  sumBASIC:
+    version: 0.2.32
+    role: BASIC runtime
+    requires: [sumCore, sumUI, sumTUI, sumIDE, sumX, sumData, sumPlot]
+    optional: [sumGUI]
+  sumX:
+    version: 0.2.21
+    role: xBase runtime
+    requires: [sumCore, sumUI, sumTUI, sumIDE, sumData]
+    optional: [sumGUI]
+  sumbash:
+    version: 0.1.0a15
+    role: portable shell and multicall toolbox
+    requires: [sumCore]
+    optional: []
+  sumTerminal:
+    version: 0.1.0a1
+    role: terminal/session engine and standalone host
+    requires: [sumFSA, sumIO, sumbash]
+    optional: []
+  sumdiff:
+    version: 0.2.8
+    role: compare and merge
+    requires: [sumUI, sumTUI]
+    optional: [sumGUI]
+  sumdoc:
+    version: 0.2.3
+    role: document conversion and help source tooling
+    requires: []
+    optional: []
+  sumbuild:
+    version: 0.1.0a41
+    role: host/Android build orchestration and runtime staging
+    requires: []
+    optional: []
+  sumKeyboard:
+    version: 0.1.0a1
+    role: portable keyboard profiles
+    requires: []
+    optional: []

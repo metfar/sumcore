@@ -24,6 +24,8 @@ from sumcore import DEFAULT_ARCHITECTURE, write_architecture_artifacts;
 def test_dependency_model():
     assert "sumGUI" in DEFAULT_ARCHITECTURE["sumIDE"]["optional"];
     assert "sumGUI" not in DEFAULT_ARCHITECTURE["sumIDE"]["requires"];
+    assert DEFAULT_ARCHITECTURE["sumIO"]["requires"] == ["sumFSA"];
+    assert DEFAULT_ARCHITECTURE["sumTerminal"]["requires"] == ["sumFSA","sumIO","sumbash"];
 
 def test_artifacts(tmp_path):
     paths=write_architecture_artifacts(tmp_path);
@@ -34,14 +36,14 @@ def test_cli_version(capsys):
     from sumcore.cli import main;
     import pytest;
     with pytest.raises(SystemExit) as exc: main(["--version"]);
-    assert exc.value.code==0; assert "sumcore 0.1.0a15" in capsys.readouterr().out;
+    assert exc.value.code==0; assert "sumcore 0.1.0a17" in capsys.readouterr().out;
 
 
 def test_architecture_cli_version(capsys):
     from sumcore.architecture import main;
     import pytest;
     with pytest.raises(SystemExit) as exc: main(["--version"]);
-    assert exc.value.code==0; assert "0.1.0a15" in capsys.readouterr().out;
+    assert exc.value.code==0; assert "0.1.0a17" in capsys.readouterr().out;
 
 def test_sum_compat_aliases():
     from sumcore import basic_boolean, is_null_alias, truth_alias;

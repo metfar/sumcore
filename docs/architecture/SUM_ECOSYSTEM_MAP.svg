@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="660" viewBox="0 0 1120 660">
+<rect width="100%" height="100%" fill="white"/>
+<line x1="240" y1="161" x2="320" y2="161" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="66" x2="320" y2="66" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="66" x2="590" y2="66" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="256" x2="590" y2="66" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="66" x2="590" y2="256" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="256" x2="590" y2="256" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="256" x2="590" y2="256" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="66" x2="590" y2="256" stroke="#444" stroke-width="2"/>
+<line x1="780" y1="66" x2="590" y2="256" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="351" x2="590" y2="256" stroke="#888" stroke-dasharray="6,5"/>
+<line x1="240" y1="66" x2="590" y2="161" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="256" x2="590" y2="161" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="256" x2="590" y2="161" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="66" x2="590" y2="161" stroke="#444" stroke-width="2"/>
+<line x1="780" y1="66" x2="590" y2="161" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="256" x2="320" y2="256" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="351" x2="320" y2="256" stroke="#888" stroke-dasharray="6,5"/>
+<line x1="240" y1="66" x2="320" y2="351" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="256" x2="320" y2="351" stroke="#444" stroke-width="2"/>
+<line x1="780" y1="66" x2="320" y2="351" stroke="#888" stroke-dasharray="6,5"/>
+<line x1="510" y1="66" x2="320" y2="351" stroke="#888" stroke-dasharray="6,5"/>
+<line x1="240" y1="256" x2="590" y2="351" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="256" x2="590" y2="351" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="351" x2="590" y2="351" stroke="#888" stroke-dasharray="6,5"/>
+<line x1="780" y1="256" x2="590" y2="351" stroke="#888" stroke-dasharray="6,5"/>
+<line x1="780" y1="161" x2="590" y2="351" stroke="#888" stroke-dasharray="6,5"/>
+<line x1="240" y1="66" x2="860" y2="66" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="256" x2="860" y2="66" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="256" x2="860" y2="66" stroke="#444" stroke-width="2"/>
+<line x1="780" y1="351" x2="860" y2="66" stroke="#444" stroke-width="2"/>
+<line x1="1050" y1="161" x2="860" y2="66" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="66" x2="860" y2="66" stroke="#444" stroke-width="2"/>
+<line x1="780" y1="66" x2="860" y2="66" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="351" x2="860" y2="66" stroke="#888" stroke-dasharray="6,5"/>
+<line x1="240" y1="66" x2="860" y2="161" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="256" x2="860" y2="161" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="256" x2="860" y2="161" stroke="#444" stroke-width="2"/>
+<line x1="780" y1="351" x2="860" y2="161" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="66" x2="860" y2="161" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="351" x2="860" y2="161" stroke="#888" stroke-dasharray="6,5"/>
+<line x1="240" y1="66" x2="590" y2="446" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="161" x2="590" y2="541" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="161" x2="590" y2="541" stroke="#444" stroke-width="2"/>
+<line x1="780" y1="446" x2="590" y2="541" stroke="#444" stroke-width="2"/>
+<line x1="240" y1="256" x2="860" y2="256" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="256" x2="860" y2="256" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="351" x2="860" y2="256" stroke="#888" stroke-dasharray="6,5"/>
+<rect x="50" y="40" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="145" y="71" text-anchor="middle" font-family="sans-serif" font-size="15">sumCore</text>
+<rect x="50" y="135" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="145" y="166" text-anchor="middle" font-family="sans-serif" font-size="15">sumFSA</text>
+<rect x="50" y="230" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="145" y="261" text-anchor="middle" font-family="sans-serif" font-size="15">sumUI</text>
+<rect x="320" y="40" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="415" y="71" text-anchor="middle" font-family="sans-serif" font-size="15">sumData</text>
+<rect x="320" y="135" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="415" y="166" text-anchor="middle" font-family="sans-serif" font-size="15">sumIO</text>
+<rect x="320" y="230" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="415" y="261" text-anchor="middle" font-family="sans-serif" font-size="15">sumTUI</text>
+<rect x="320" y="325" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="415" y="356" text-anchor="middle" font-family="sans-serif" font-size="15">sumGUI</text>
+<rect x="590" y="40" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="685" y="71" text-anchor="middle" font-family="sans-serif" font-size="15">sumPlot</text>
+<rect x="590" y="135" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="685" y="166" text-anchor="middle" font-family="sans-serif" font-size="15">sumPY</text>
+<rect x="590" y="230" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="685" y="261" text-anchor="middle" font-family="sans-serif" font-size="15">sumR</text>
+<rect x="590" y="325" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="685" y="356" text-anchor="middle" font-family="sans-serif" font-size="15">sumIDE</text>
+<rect x="590" y="420" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="685" y="451" text-anchor="middle" font-family="sans-serif" font-size="15">sumbash</text>
+<rect x="590" y="515" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="685" y="546" text-anchor="middle" font-family="sans-serif" font-size="15">sumTerminal</text>
+<rect x="860" y="40" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="955" y="71" text-anchor="middle" font-family="sans-serif" font-size="15">sumBASIC</text>
+<rect x="860" y="135" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="955" y="166" text-anchor="middle" font-family="sans-serif" font-size="15">sumX</text>
+<rect x="860" y="230" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="955" y="261" text-anchor="middle" font-family="sans-serif" font-size="15">sumdiff</text>
+<rect x="860" y="325" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="955" y="356" text-anchor="middle" font-family="sans-serif" font-size="15">sumdoc</text>
+<rect x="860" y="420" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="955" y="451" text-anchor="middle" font-family="sans-serif" font-size="15">sumbuild</text>
+<rect x="860" y="515" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>
+<text x="955" y="546" text-anchor="middle" font-family="sans-serif" font-size="15">sumKeyboard</text>
+</svg>

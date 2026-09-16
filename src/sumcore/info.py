@@ -60,7 +60,7 @@ import sys;
 from . import __version__;
 from .audio_daemon import AudioDaemonClient, DEFAULT_RELEASE_MS, DEFAULT_SAMPLE_RATE, PersistentPCMOutput, default_endpoint;
 
-_SUM_PACKAGES = ("sumcore", "sumui", "sumtui", "sumgui", "sumide", "sumbasic", "sumbash", "sumx", "sumpy", "sumr", "sumdata", "sumplot", "sumdiff", "sumdoc");
+_SUM_PACKAGES = ("sumcore", "sumfsa", "sumio", "sumui", "sumdata", "sumplot", "sumgui", "sumtui", "sumr", "sumpy", "sumide", "sumx", "sumbasic", "sumbash", "sumterminal", "sumdiff", "sumdoc", "sumbuild", "sumkeyboard");
 GROUPS = ("platform", "hardware", "software", "terminal", "audio", "packages", "themes", "sum", "simulated");
 
 
@@ -763,7 +763,7 @@ def summary_rows(group, data):
     if group == "sum":
         packages = data.get("packages", {});
         rows = [("installed", len(packages))];
-        for name in ("sumcore", "sumui", "sumtui", "sumgui", "sumide", "sumbasic", "sumbash", "sumx"): 
+        for name in _SUM_PACKAGES: 
             if name in packages: rows.append((name, packages[name]));
         return rows;
     if group == "simulated": return [("audio.sample_rate", data.get("audio", {}).get("internal_sample_rate")), ("audio.polyphony", data.get("audio", {}).get("polyphony")), ("keyboard.keyup", data.get("keyboard", {}).get("gui_keyup"))];
