@@ -44,6 +44,8 @@
 <line x1="240" y1="161" x2="590" y2="541" stroke="#444" stroke-width="2"/>
 <line x1="510" y1="161" x2="590" y2="541" stroke="#444" stroke-width="2"/>
 <line x1="780" y1="446" x2="590" y2="541" stroke="#444" stroke-width="2"/>
+<line x1="510" y1="351" x2="590" y2="541" stroke="#444" stroke-width="2"/>
+<line x1="1050" y1="541" x2="590" y2="541" stroke="#444" stroke-width="2"/>
 <line x1="240" y1="256" x2="860" y2="256" stroke="#444" stroke-width="2"/>
 <line x1="510" y1="256" x2="860" y2="256" stroke="#444" stroke-width="2"/>
 <line x1="510" y1="351" x2="860" y2="256" stroke="#888" stroke-dasharray="6,5"/>

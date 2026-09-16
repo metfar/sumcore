@@ -1,7 +1,7 @@
 schema: sum.architecture/1
 packages:
   sumCore:
-    version: 0.1.0a17
+    version: 0.1.0a18
     role: core architecture, identity and shared services
     requires: []
     optional: []
@@ -71,9 +71,9 @@ packages:
     requires: [sumCore]
     optional: []
   sumTerminal:
-    version: 0.1.0a1
-    role: terminal/session engine and standalone host
-    requires: [sumFSA, sumIO, sumbash]
+    version: 0.1.0a2
+    role: terminal/session engine, graphical frontend and drop-down host
+    requires: [sumFSA, sumIO, sumbash, sumGUI, sumKeyboard]
     optional: []
   sumdiff:
     version: 0.2.8
@@ -91,7 +91,7 @@ packages:
     requires: []
     optional: []
   sumKeyboard:
-    version: 0.1.0a1
+    version: 0.1.0a2
     role: portable keyboard profiles
     requires: []
     optional: []

@@ -1,5 +1,5 @@
 package,version,requires,optional,role
-sumCore,0.1.0a17,,,"core architecture, identity and shared services"
+sumCore,0.1.0a18,,,"core architecture, identity and shared services"
 sumFSA,0.1.0a1,,,"logical filesystem, mounts, volumes and locations"
 sumIO,0.1.0a1,sumFSA,pyserial,"capability-based files, streams, pipes and serial I/O"
 sumData,0.1.0a2,sumCore,pyreadr,"common data objects, datasets and RDS"
@@ -13,8 +13,8 @@ sumIDE,0.2.22,sumUI;sumTUI,sumGUI;sumR;sumPY,common multi-language IDE
 sumBASIC,0.2.32,sumCore;sumUI;sumTUI;sumIDE;sumX;sumData;sumPlot,sumGUI,BASIC runtime
 sumX,0.2.21,sumCore;sumUI;sumTUI;sumIDE;sumData,sumGUI,xBase runtime
 sumbash,0.1.0a15,sumCore,,portable shell and multicall toolbox
-sumTerminal,0.1.0a1,sumFSA;sumIO;sumbash,,terminal/session engine and standalone host
+sumTerminal,0.1.0a2,sumFSA;sumIO;sumbash;sumGUI;sumKeyboard,,"terminal/session engine, graphical frontend and drop-down host"
 sumdiff,0.2.8,sumUI;sumTUI,sumGUI,compare and merge
 sumdoc,0.2.3,,,document conversion and help source tooling
 sumbuild,0.1.0a41,,,host/Android build orchestration and runtime staging
-sumKeyboard,0.1.0a1,,,portable keyboard profiles
+sumKeyboard,0.1.0a2,,,portable keyboard profiles
