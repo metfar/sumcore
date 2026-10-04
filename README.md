@@ -1,4 +1,4 @@
-# sumcore
+# sumcore 0.1.0a20
 
 Core architecture, registry, diagnostics and shared runtime services for the Sum ecosystem.
 
