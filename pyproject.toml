@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sumcore"
-version = "0.1.0a19"
+version = "0.1.0a20"
 description = "Core architecture, registry and release metadata for the Sum ecosystem."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -14,6 +14,10 @@ dependencies = []
 classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3"]
 
 [project.scripts]
+sum-audio-server = "sumcore.broadcast.server_daemon:main"
+sum-audio-admin = "sumcore.broadcast.server_back_cli:main"
+sum-audio-client = "sumcore.broadcast.stream_client:main"
+sum-charset = "sumcore.charset_cli:main"
 sumcore = "sumcore.cli:main"
 sum-architecture = "sumcore.architecture:main"
 sumbeep = "sumcore.audio_cli:main_beep"

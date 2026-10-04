@@ -941,6 +941,11 @@ class MusicEngine:
                 self._queue.task_done();
 
     def _run_tracks(self, generation, tracks):
+        exporter = getattr(self.tone_func, "render_tracks", None);
+        if callable(exporter):
+            if generation == self._current_generation():
+                exporter(tracks, self.output_volume);
+            return;
         threads = [];
         for index, events in enumerate(tracks):
             thread = threading.Thread(target=self._run_track, args=(generation, index, events), name="sumBASIC-music-{}".format(index), daemon=True);
