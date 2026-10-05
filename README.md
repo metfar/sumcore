@@ -114,4 +114,13 @@ Administrator/UAC, Registry inventory or Windows package-manager support is
 claimed yet; the code contains explicit extension points for a future tested
 port.
 
+
+## Shared text, format and language semantics
+
+`sumcore` now provides the common implementation used by frontends for `REPEAT`, zero-based `MID`/`INSTR`, extended trim helpers, `LIKE`/`ILIKE`, `NUMFORMAT`, `DATEFORMAT`, `TEXTFORMAT` and tri-state `BOOLFORMAT`.
+
+The first syntax lexicons are `en`, `es`, `fr` and `pt`. Canonical identifiers stay language-neutral while applications choose how to spell them. UI language, syntax language and data locale remain independent settings.
+
+Every common help entry carries an example and `help_topics()` returns function topics alphabetically. `About` is intentionally application metadata, not a help topic.
+
 <p align=center><b>- oOo -</b></p>
