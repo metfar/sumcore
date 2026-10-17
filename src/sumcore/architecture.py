@@ -24,25 +24,33 @@ import argparse;
 import csv;
 
 DEFAULT_ARCHITECTURE = {
-    "sumCore": {"version":"0.1.0a20", "requires":[], "optional":[], "role":"core architecture, identity and shared services"},
+    "sumCore": {"version":"0.1.0a22", "requires":[], "optional":[], "role":"core architecture, identity and shared services"},
     "sumFSA": {"version":"0.1.0a1", "requires":[], "optional":[], "role":"logical filesystem, mounts, volumes and locations"},
     "sumIO": {"version":"0.1.0a1", "requires":["sumFSA"], "optional":["pyserial"], "role":"capability-based files, streams, pipes and serial I/O"},
     "sumData": {"version":"0.1.0a2", "requires":["sumCore"], "optional":["pyreadr"], "role":"common data objects, datasets and RDS"},
     "sumPlot": {"version":"0.1.0a2", "requires":["sumCore","sumUI"], "optional":["matplotlib","seaborn"], "role":"plot semantics and PlotSpec"},
     "sumR": {"version":"0.1.0a7", "requires":["sumCore","sumUI","sumTUI","sumData","sumPlot"], "optional":["sumGUI","Rscript"], "role":"R-compatible runtime"},
-    "sumPY": {"version":"0.1.0a9", "requires":["sumCore","sumUI","sumTUI","sumData","sumPlot"], "optional":[], "role":"Python SUM runtime"},
+    "sumPY": {"version":"0.1.0a10", "requires":["sumCore","sumUI","sumTUI","sumData","sumPlot"], "optional":[], "role":"Python SUM runtime"},
     "sumUI": {"version":"0.1.0a16", "requires":[], "optional":[], "role":"backend-neutral UI contracts"},
     "sumTUI": {"version":"0.8.0a21", "requires":["sumUI"], "optional":["sumGUI"], "role":"terminal presentation"},
     "sumGUI": {"version":"0.2.0a24", "requires":["sumCore","sumUI"], "optional":["matplotlib","seaborn","sumPlot","sumData"], "role":"Pygame presentation"},
     "sumIDE": {"version":"0.2.22", "requires":["sumUI","sumTUI"], "optional":["sumGUI","sumR","sumPY"], "role":"common multi-language IDE"},
-    "sumBASIC": {"version":"0.2.33", "requires":["sumCore","sumUI","sumTUI","sumIDE","sumX","sumData","sumPlot"], "optional":["sumGUI"], "role":"BASIC runtime"},
-    "sumX": {"version":"0.2.21", "requires":["sumCore","sumUI","sumTUI","sumIDE","sumData"], "optional":["sumGUI"], "role":"xBase runtime"},
+    "sumBASIC": {"version":"0.2.37", "requires":["sumCore","sumUI","sumTUI","sumIDE","sumX","sumData","sumPlot"], "optional":["sumGUI"], "role":"BASIC runtime"},
+    "sumX": {"version":"0.2.22", "requires":["sumCore","sumUI","sumTUI","sumIDE","sumData"], "optional":["sumGUI"], "role":"xBase runtime"},
     "sumbash": {"version":"0.1.0a16", "requires":["sumCore"], "optional":[], "role":"portable shell and multicall toolbox"},
     "sumTerminal": {"version":"0.1.0a3", "requires":["sumFSA","sumIO","sumbash","sumGUI","sumKeyboard"], "optional":[], "role":"terminal/session engine, ANSI graphical frontend, configurable fonts and drop-down host"},
     "sumdiff": {"version":"0.2.8", "requires":["sumUI","sumTUI"], "optional":["sumGUI"], "role":"compare and merge"},
-    "sumdoc": {"version":"0.2.3", "requires":[], "optional":[], "role":"document conversion and help source tooling"},
+    "sumdoc": {"version":"0.3.2", "requires":["sumCore"], "optional":[], "role":"document/format conversion, SUMTAB native format and help source tooling"},
     "sumbuild": {"version":"0.1.0a41", "requires":[], "optional":[], "role":"host/Android build orchestration and runtime staging"},
     "sumKeyboard": {"version":"0.1.0a2", "requires":[], "optional":[], "role":"portable keyboard profiles"},
+};
+
+DEFAULT_AUTHORITIES = {
+    "sum.types/1": {"authority":"sumCore", "implementation":"sumcore.schema", "role":"canonical SUM logical and structured type vocabulary"},
+    "sum.schema/1": {"authority":"sumCore", "implementation":"sumcore.schema", "role":"portable table/schema contract above individual language runtimes"},
+    "sum.indexes/1": {"authority":"sumCore", "implementation":"sumdoc.sumtab", "role":"portable index definitions used to regenerate backend indexes without preserving native index files"},
+    "sumtab/1": {"authority":"sumCore", "implementation":"sumdoc.sumtab", "role":"native SUM tabular interchange and cache format"},
+    "sum.table-conversion/1": {"authority":"sumCore", "implementation":"sumdoc.tools.tableconvert", "role":"table/document conversion policy including automatic destination profiles"},
 };
 
 
@@ -54,6 +62,12 @@ def _yaml(data):
         lines.append("    role: {}".format(spec["role"]));
         lines.append("    requires: [{}]".format(", ".join(spec["requires"])));
         lines.append("    optional: [{}]".format(", ".join(spec["optional"])));
+    lines.append("authorities:");
+    for name,spec in DEFAULT_AUTHORITIES.items():
+        lines.append("  {}:".format(name));
+        lines.append("    authority: {}".format(spec["authority"]));
+        lines.append("    implementation: {}".format(spec["implementation"]));
+        lines.append("    role: {}".format(spec["role"]));
     return "\n".join(lines)+"\n";
 
 
@@ -69,6 +83,10 @@ def write_architecture_artifacts(directory="."):
     md += ["","<p align=center><b>- oOo -</b></p>"]; (out/"SUM_COMMAND_MATRIX.md").write_text("\n".join(md)+"\n",encoding="utf-8");
     mapmd=["# SUM ecosystem architecture","","```text","native platform","    |","sumFSA ----> sumIO ----> sumTerminal","    |                         |","    +-------------------------+","","sumCore / sumData / sumPlot / sumUI","    |","language runtimes + IDE + tools","```","","Required dependencies in the matrix describe current package metadata. sumFSA/sumIO establish the storage/I/O boundary; sumTerminal is the first reusable PTY/session consumer built directly on it.","","<p align=center><b>- oOo -</b></p>"];
     (out/"SUM_ECOSYSTEM_MAP.md").write_text("\n".join(mapmd)+"\n",encoding="utf-8");
+    authmd=["# SUM architecture authorities","","| Contract | Authority | Implementation | Role |","|---|---|---|---|"];
+    for name,spec in DEFAULT_AUTHORITIES.items(): authmd.append("| {} | {} | {} | {} |".format(name,spec["authority"],spec["implementation"],spec["role"]));
+    authmd += ["","SUMTAB is a native SUM format. Type, schema and index-definition authority remains above individual language runtimes.","","<p align=center><b>- oOo -</b></p>"];
+    (out/"SUM_AUTHORITIES.md").write_text("\n".join(authmd)+"\n",encoding="utf-8");
     columns=[["sumCore","sumFSA","sumUI"],["sumData","sumIO","sumTUI","sumGUI"],["sumPlot","sumPY","sumR","sumIDE","sumbash","sumTerminal"],["sumBASIC","sumX","sumdiff","sumdoc","sumbuild","sumKeyboard"]];
     coords={}; width=1120; height=660;
     for ci,column in enumerate(columns):
@@ -85,7 +103,7 @@ def write_architecture_artifacts(directory="."):
     for name,(x,y) in coords.items():
         svg += [f'<rect x="{x}" y="{y}" width="190" height="52" rx="8" fill="#f7f7f7" stroke="#222"/>',f'<text x="{x+95}" y="{y+31}" text-anchor="middle" font-family="sans-serif" font-size="15">{name}</text>'];
     svg.append('</svg>'); (out/"SUM_ECOSYSTEM_MAP.svg").write_text("\n".join(svg)+"\n",encoding="utf-8");
-    return tuple(out/name for name in ("SUM_ARCHITECTURE.yaml","SUM_ECOSYSTEM_MAP.svg","SUM_ECOSYSTEM_MAP.md","SUM_COMMAND_MATRIX.md","SUM_COMMAND_MATRIX.csv"));
+    return tuple(out/name for name in ("SUM_ARCHITECTURE.yaml","SUM_ECOSYSTEM_MAP.svg","SUM_ECOSYSTEM_MAP.md","SUM_COMMAND_MATRIX.md","SUM_COMMAND_MATRIX.csv","SUM_AUTHORITIES.md"));
 
 
 def main(argv=None):

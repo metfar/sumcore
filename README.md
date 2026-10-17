@@ -1,5 +1,13 @@
 # sumcore 0.1.0a20
 
+## 0.1.0a22 schema authority
+
+This revision adds `sumcore.schema` as the authority for `sum.types/1`,
+`sum.schema/1`, `sum.indexes/1`, and the `sumtab/1` format identifier.
+Packages that use SUMTAB must require sumCore 0.1.0a22 or newer; 0.1.0a21
+does not contain this module.
+
+
 Core architecture, registry, diagnostics and shared runtime services for the Sum ecosystem.
 
 ## Shared audio service
@@ -124,3 +132,7 @@ The first syntax lexicons are `en`, `es`, `fr` and `pt`. Canonical identifiers s
 Every common help entry carries an example and `help_topics()` returns function topics alphabetically. `About` is intentionally application metadata, not a help topic.
 
 <p align=center><b>- oOo -</b></p>
+
+## SUM architecture authorities
+
+`sumCore` registers contracts that sit above individual language runtimes. The initial authority registry includes `sum.types/1`, `sum.schema/1`, `sum.indexes/1`, native `sumtab/1`, and `sum.table-conversion/1`. Implementations may live in other packages (for example the SUMTAB codec and converter in SumDoc) without making those packages or languages the authority for the contract.
