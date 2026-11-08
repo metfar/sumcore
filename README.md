@@ -1,4 +1,4 @@
-# sumcore 0.1.0a20
+# sumcore 0.1.0a22
 
 ## 0.1.0a22 schema authority
 
@@ -136,3 +136,7 @@ Every common help entry carries an example and `help_topics()` returns function 
 ## SUM architecture authorities
 
 `sumCore` registers contracts that sit above individual language runtimes. The initial authority registry includes `sum.types/1`, `sum.schema/1`, `sum.indexes/1`, native `sumtab/1`, and `sum.table-conversion/1`. Implementations may live in other packages (for example the SUMTAB codec and converter in SumDoc) without making those packages or languages the authority for the contract.
+
+## SUMTAB/1
+
+El códec SUMTAB común se encuentra ahora en `sumcore.sumtab`. La ruta anterior `sumdoc.sumtab` mantiene un reexport para compatibilidad. `sumcore.sumx_interchange` es un adaptador experimental para las bases SQLite nativas de sumX.
