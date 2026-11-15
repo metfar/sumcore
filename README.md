@@ -131,12 +131,12 @@ The first syntax lexicons are `en`, `es`, `fr` and `pt`. Canonical identifiers s
 
 Every common help entry carries an example and `help_topics()` returns function topics alphabetically. `About` is intentionally application metadata, not a help topic.
 
-<p align=center><b>- oOo -</b></p>
-
 ## SUM architecture authorities
 
-`sumCore` registers contracts that sit above individual language runtimes. The initial authority registry includes `sum.types/1`, `sum.schema/1`, `sum.indexes/1`, native `sumtab/1`, and `sum.table-conversion/1`. Implementations may live in other packages (for example the SUMTAB codec and converter in SumDoc) without making those packages or languages the authority for the contract.
+`sumCore` registers contracts that sit above individual language runtimes. The initial authority registry includes `sum.types/1`, `sum.schema/1`, `sum.indexes/1`, native `sumtab/1`, and `sum.table-conversion/1`. Implementations may live in other packages (for example, the SUMTAB codec and converter in SumDoc) without making those packages or languages ​​the authority for the contract.
 
 ## SUMTAB/1
 
-El códec SUMTAB común se encuentra ahora en `sumcore.sumtab`. La ruta anterior `sumdoc.sumtab` mantiene un reexport para compatibilidad. `sumcore.sumx_interchange` es un adaptador experimental para las bases SQLite nativas de sumX.
+The common SUMTAB codec is now located in `sumcore.sumtab`. The previous path, `sumdoc.sumtab`, still reexports to preserve compatibility. `sumcore.sumx_interchange` is an experimental adapter for sumX's native SQLite databases.
+
+<p align=center><b>- oOo -</b></p>
