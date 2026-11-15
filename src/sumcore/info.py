@@ -889,6 +889,7 @@ def _interactive_view(kind, report, groups, detailed):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="suminfo", description="Passively inspect the current system and SUM environment.");
+    parser.add_argument("--version", action="version", version="suminfo {}".format(__version__));
     parser.add_argument("-a", "--all", action="store_true", help="show complete information for all selected groups");
     parser.add_argument("-g", "--group", action="append", choices=GROUPS, help="show one group in detail; may be repeated");
     parser.add_argument("--list-groups", action="store_true", help="list available information groups");

@@ -28,6 +28,7 @@ audio service.
 """;
 
 import argparse;
+from . import __version__;
 import json;
 import math;
 import os;
@@ -575,6 +576,7 @@ def _main_start():
 
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="sumaudiod", description="Persistent audio daemon from sumCore.");
+    parser.add_argument("--version", action="version", version="sumaudiod {}".format(__version__));
     sub = parser.add_subparsers(dest="command");
     sub.add_parser("start", help="start the daemon in the background");
     sub.add_parser("serve", help="run the daemon in the foreground");

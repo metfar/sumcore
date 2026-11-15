@@ -6,6 +6,7 @@
 # GPL-2.0-or-later.
 """Simple MP3 HTTP receiver; uses ffplay for audible playback."""
 import argparse;
+from .. import __version__;
 import shutil;
 import subprocess;
 import sys;
@@ -13,6 +14,7 @@ import urllib.request;
 
 def main():
     parser = argparse.ArgumentParser(description='Listen to a sum audio HTTP stream');
+    parser.add_argument("--version", action="version", version="sum-audio-client {}".format(__version__));
     parser.add_argument('url');
     parser.add_argument('--seconds', type=float, help='Listen for N seconds then stop');
     parser.add_argument('--output', help='Capture MP3 bytes instead of playing');

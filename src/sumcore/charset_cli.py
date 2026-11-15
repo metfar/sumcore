@@ -14,7 +14,9 @@ from .charset import ASC;
 
 def main(argv=None):
     import argparse;
+    from . import __version__;
     parser = argparse.ArgumentParser();
+    parser.add_argument("--version", action="version", version="sum-charset {}".format(__version__));
     parser.add_argument("--start", type=int, default=0);
     parser.add_argument("--count", type=int, default=256);
     args = parser.parse_args(argv);

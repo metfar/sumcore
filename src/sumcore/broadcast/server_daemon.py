@@ -11,6 +11,7 @@
 #
 """HTTP audio service + loopback-only administrative API."""
 import argparse;
+from .. import __version__;
 import configparser;
 import hmac;
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer;
@@ -331,6 +332,7 @@ class AdminHandler(BaseHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(description='sum audio broadcast daemon');
+    parser.add_argument("--version", action="version", version="sum-audio-server {}".format(__version__));
     parser.add_argument('--port', type=int, default=53845);
     parser.add_argument('--host', default='127.0.0.1');
     parser.add_argument('--admin-port', type=int);

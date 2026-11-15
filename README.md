@@ -1,4 +1,4 @@
-# sumcore 0.1.0a22
+# sumcore 0.1.0a23
 
 ## 0.1.0a22 schema authority
 

@@ -6,6 +6,7 @@
 # GPL-2.0-or-later.
 """Loopback administrative client for sum audio server."""
 import argparse;
+from .. import __version__;
 import http.client;
 import json;
 from pathlib import Path;
@@ -14,6 +15,7 @@ from urllib.parse import urlencode;
 
 def main():
     parser = argparse.ArgumentParser(description='Manage a running sum audio daemon');
+    parser.add_argument("--version", action="version", version="sum-audio-admin {}".format(__version__));
     parser.add_argument('--admin-port', type=int, default=53846);
     parser.add_argument('--token-file', default='server.token');
     controls = parser.add_mutually_exclusive_group();

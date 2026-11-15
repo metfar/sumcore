@@ -1,7 +1,7 @@
 # ADR-CLI-001 — SUM command-line contract and implementations
 
 **Date:** 2026-11-15  
-**Status:** Accepted architecture; initial implementation tested locally (not merged or released)  
+**Status:** Accepted architecture; 19-package local migration prototype tested (not published)  
 **Scope:** SUM command-line tools and future language runtimes
 
 ## Context and history
@@ -40,11 +40,25 @@ Successful commands exit 0; argument errors and invalid theme names exit 2. Ordi
 - `sumcore.cli` now uses only `sys.argv`; no `argparse` import.
 - `sumcore.cli_contract` provides an initial minimal set of specifications. Command nesting, richer value types, cross-language serialization and advanced validation remain future extensions.
 - `sumui.cli` provides `SumArgumentParser`, `ThemeProvider` and a conversion from a simple `CommandSpec` to `argparse`. It preserves `sumui --version` output and the prior CLI entry point.
-- Existing tools such as `sumdisp`, `suminfo`, `SES`, `sumdoc` and language runtimes are **not yet migrated**. Adding a common parser does not silently enable theme flags in those tools.
+- The original r01 did not migrate existing tools. The subsequent local migration prototype now uses `SumArgumentParser` in SUM applications, including SumDoc tool parsers and dispatchers. The sumCore helper CLIs remain independently based on `argparse`; the standalone sumCore command uses `sys.argv`. The SES package is not included in the supplied 19-package source snapshot and is therefore not claimed as migrated.
 - Theme persistence is delegated to each registered provider. A shared storage/precedence policy remains open.
 
 ## Verification targets
 
 Version/help and invalid-argument exit codes; alias equivalence; alphabetized theme list; nonmutating queries; validated persistent saves; no theme capability without a provider; spec-based options; and application-specific flags.
+
+## Local migration revision — 2026-11-15
+
+**Scope:** 19 packages from the supplied `ver1.1.zip` repository-copy directories, not the separate versioned local trees. Version numbers were incremented locally. No repository was modified.
+
+- General-purpose argument parsers adopt `SumArgumentParser`; specialized parser behavior remains intact.
+- `sumdoc` retains multicall dispatch and its tool-specific parsing, while globals are now interpreted with `SumArgumentParser`.
+- `sumbash` uses SUM parsing for top-level informational flags and link management, while preserving exact script/applet argument forwarding.
+- `sumcore` remains dependency-free in its minimal CLI and independent of sumUI in its service programs.
+- `sumudg` now has a parser before GUI window creation. Full graphical verification requires `pygame` on the test host.
+- `--version` is auto-provided by the shared parser when an application does not declare its own, preserving explicit legacy version actions.
+- `--list-themes`, `--get-theme` and `--set-theme` remain provider-conditional; applications must attach a real provider before advertising these commands. This revision does **not** claim universal theme persistence.
+
+**Verification:** local compile checks and targeted regression tests are evidence for this snapshot; further GUI/device/long-running service tests must run in the target environment.
 
 <p align=center><b>- oOo -</b></p>
