@@ -1,9 +1,19 @@
 schema: sum.architecture/1
 packages:
   sumCore:
-    version: 0.1.0a18
+    version: 0.1.0a25
     role: core architecture, identity and shared services
     requires: []
+    optional: []
+  sumUtilsRuntime:
+    version: 0.1.0a1
+    role: portable host-language adaptation runtime; independent of SUM packages
+    requires: []
+    optional: []
+  sumUtils:
+    version: 0.1.0a1
+    role: SUM-aware utility facade over portable runtime services
+    requires: [sumCore, sumUtilsRuntime]
     optional: []
   sumFSA:
     version: 0.1.0a1
@@ -21,9 +31,9 @@ packages:
     requires: [sumCore]
     optional: [pyreadr]
   sumPlot:
-    version: 0.1.0a2
-    role: plot semantics and PlotSpec
-    requires: [sumCore, sumUI]
+    version: 0.1.0a5
+    role: plot semantics, coordinates and PlotSpec
+    requires: [sumCore, sumUI, sumUtilsRuntime]
     optional: [matplotlib, seaborn]
   sumR:
     version: 0.1.0a7
@@ -31,14 +41,14 @@ packages:
     requires: [sumCore, sumUI, sumTUI, sumData, sumPlot]
     optional: [sumGUI, Rscript]
   sumPY:
-    version: 0.1.0a9
+    version: 0.1.0a10
     role: Python SUM runtime
     requires: [sumCore, sumUI, sumTUI, sumData, sumPlot]
     optional: []
   sumUI:
-    version: 0.1.0a16
+    version: 0.1.0a22
     role: backend-neutral UI contracts
-    requires: []
+    requires: [sumCore]
     optional: []
   sumTUI:
     version: 0.8.0a21
@@ -56,23 +66,23 @@ packages:
     requires: [sumUI, sumTUI]
     optional: [sumGUI, sumR, sumPY]
   sumBASIC:
-    version: 0.2.32
+    version: 0.2.37
     role: BASIC runtime
     requires: [sumCore, sumUI, sumTUI, sumIDE, sumX, sumData, sumPlot]
     optional: [sumGUI]
   sumX:
-    version: 0.2.21
+    version: 0.2.22
     role: xBase runtime
     requires: [sumCore, sumUI, sumTUI, sumIDE, sumData]
     optional: [sumGUI]
   sumbash:
-    version: 0.1.0a15
+    version: 0.1.0a16
     role: portable shell and multicall toolbox
     requires: [sumCore]
     optional: []
   sumTerminal:
-    version: 0.1.0a2
-    role: terminal/session engine, graphical frontend and drop-down host
+    version: 0.1.0a3
+    role: terminal/session engine, ANSI graphical frontend, configurable fonts and drop-down host
     requires: [sumFSA, sumIO, sumbash, sumGUI, sumKeyboard]
     optional: []
   sumdiff:
@@ -81,9 +91,9 @@ packages:
     requires: [sumUI, sumTUI]
     optional: [sumGUI]
   sumdoc:
-    version: 0.2.3
-    role: document conversion and help source tooling
-    requires: []
+    version: 0.3.2
+    role: document/format conversion, SUMTAB native format and help source tooling
+    requires: [sumCore]
     optional: []
   sumbuild:
     version: 0.1.0a41
@@ -95,3 +105,36 @@ packages:
     role: portable keyboard profiles
     requires: []
     optional: []
+authorities:
+  sum.types/1:
+    authority: sumCore
+    implementation: sumcore.schema
+    role: canonical SUM logical and structured type vocabulary
+  sum.schema/1:
+    authority: sumCore
+    implementation: sumcore.schema
+    role: portable table/schema contract above individual language runtimes
+  sum.indexes/1:
+    authority: sumCore
+    implementation: sumdoc.sumtab
+    role: portable index definitions used to regenerate backend indexes without preserving native index files
+  sumtab/1:
+    authority: sumCore
+    implementation: sumdoc.sumtab
+    role: native SUM tabular interchange and cache format
+  sum.table-conversion/1:
+    authority: sumCore
+    implementation: sumdoc.tools.tableconvert
+    role: table/document conversion policy including automatic destination profiles
+  sum.runtime-utils/1:
+    authority: sumUtilsRuntime
+    implementation: sumutilsruntime.runtime
+    role: portable host-language adaptation API used inside or outside SUM
+  sum.blocks/1:
+    authority: sumUtilsRuntime
+    implementation: sumutilsruntime.runtime
+    role: copy/paste-safe envelope for native runtime serialization; not a cross-language interchange format
+  sum.angle/1:
+    authority: sumPlot
+    implementation: sumplot.angle
+    role: mathematical angular convention: zero on +x and positive counterclockwise

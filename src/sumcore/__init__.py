@@ -27,5 +27,5 @@ from .formatting import UNKNOWN, tristate, numformat, dateformat, textformat, bo
 from .schema import SUM_TYPE_SYSTEM, SUM_SCHEMA_SYSTEM, SUM_INDEX_SYSTEM, SUMTAB_FORMAT, SUM_SCALAR_TYPES, SUM_STRUCTURED_TYPES, canonical_type;
 from .lexicon import SUPPORTED_LANGUAGES, resolve as resolve_lexeme, display_name as lexeme_name, help_topics as lexicon_help_topics;
 from .audio_api import audio_engine, beep, midi_frequency, play, set_audio_engine, sound, stop_audio, tone_pcm_bytes, tone_wav_bytes, wait_audio;
-__version__ = '0.1.0a24';
+__version__ = '0.1.0a25';
 __all__ = ["DEFAULT_ARCHITECTURE", "DEFAULT_AUTHORITIES", "write_architecture_artifacts", "TRUE_ALIASES", "FALSE_ALIASES", "NULL_ALIASES", "truth_alias", "is_null_alias", "basic_boolean", "AudioEngine", "audio_engine", "beep", "midi_frequency", "play", "set_audio_engine", "sound", "stop_audio", "tone_pcm_bytes", "tone_wav_bytes", "wait_audio", "repeat", "left", "right", "mid", "instr", "find", "ltrim", "rtrim", "trim", "alltrim", "like", "ilike", "UNKNOWN", "tristate", "numformat", "dateformat", "textformat", "boolformat", "SUPPORTED_LANGUAGES", "resolve_lexeme", "lexeme_name", "lexicon_help_topics", "SUM_TYPE_SYSTEM", "SUM_SCHEMA_SYSTEM", "SUM_INDEX_SYSTEM", "SUMTAB_FORMAT", "SUM_SCALAR_TYPES", "SUM_STRUCTURED_TYPES", "canonical_type"];

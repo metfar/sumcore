@@ -24,14 +24,16 @@ import argparse;
 import csv;
 
 DEFAULT_ARCHITECTURE = {
-    "sumCore": {"version":"0.1.0a22", "requires":[], "optional":[], "role":"core architecture, identity and shared services"},
+    "sumCore": {"version":"0.1.0a25", "requires":[], "optional":[], "role":"core architecture, identity and shared services"},
+    "sumUtilsRuntime": {"version":"0.1.0a1", "requires":[], "optional":[], "role":"portable host-language adaptation runtime; independent of SUM packages"},
+    "sumUtils": {"version":"0.1.0a1", "requires":["sumCore","sumUtilsRuntime"], "optional":[], "role":"SUM-aware utility facade over portable runtime services"},
     "sumFSA": {"version":"0.1.0a1", "requires":[], "optional":[], "role":"logical filesystem, mounts, volumes and locations"},
     "sumIO": {"version":"0.1.0a1", "requires":["sumFSA"], "optional":["pyserial"], "role":"capability-based files, streams, pipes and serial I/O"},
     "sumData": {"version":"0.1.0a2", "requires":["sumCore"], "optional":["pyreadr"], "role":"common data objects, datasets and RDS"},
-    "sumPlot": {"version":"0.1.0a2", "requires":["sumCore","sumUI"], "optional":["matplotlib","seaborn"], "role":"plot semantics and PlotSpec"},
+    "sumPlot": {"version":"0.1.0a5", "requires":["sumCore","sumUI","sumUtilsRuntime"], "optional":["matplotlib","seaborn"], "role":"plot semantics, coordinates and PlotSpec"},
     "sumR": {"version":"0.1.0a7", "requires":["sumCore","sumUI","sumTUI","sumData","sumPlot"], "optional":["sumGUI","Rscript"], "role":"R-compatible runtime"},
     "sumPY": {"version":"0.1.0a10", "requires":["sumCore","sumUI","sumTUI","sumData","sumPlot"], "optional":[], "role":"Python SUM runtime"},
-    "sumUI": {"version":"0.1.0a16", "requires":[], "optional":[], "role":"backend-neutral UI contracts"},
+    "sumUI": {"version":"0.1.0a22", "requires":["sumCore"], "optional":[], "role":"backend-neutral UI contracts"},
     "sumTUI": {"version":"0.8.0a21", "requires":["sumUI"], "optional":["sumGUI"], "role":"terminal presentation"},
     "sumGUI": {"version":"0.2.0a24", "requires":["sumCore","sumUI"], "optional":["matplotlib","seaborn","sumPlot","sumData"], "role":"Pygame presentation"},
     "sumIDE": {"version":"0.2.22", "requires":["sumUI","sumTUI"], "optional":["sumGUI","sumR","sumPY"], "role":"common multi-language IDE"},
@@ -51,6 +53,9 @@ DEFAULT_AUTHORITIES = {
     "sum.indexes/1": {"authority":"sumCore", "implementation":"sumdoc.sumtab", "role":"portable index definitions used to regenerate backend indexes without preserving native index files"},
     "sumtab/1": {"authority":"sumCore", "implementation":"sumdoc.sumtab", "role":"native SUM tabular interchange and cache format"},
     "sum.table-conversion/1": {"authority":"sumCore", "implementation":"sumdoc.tools.tableconvert", "role":"table/document conversion policy including automatic destination profiles"},
+    "sum.runtime-utils/1": {"authority":"sumUtilsRuntime", "implementation":"sumutilsruntime.runtime", "role":"portable host-language adaptation API used inside or outside SUM"},
+    "sum.blocks/1": {"authority":"sumUtilsRuntime", "implementation":"sumutilsruntime.runtime", "role":"copy/paste-safe envelope for native runtime serialization; not a cross-language interchange format"},
+    "sum.angle/1": {"authority":"sumPlot", "implementation":"sumplot.angle", "role":"mathematical angular convention: zero on +x and positive counterclockwise"},
 };
 
 
@@ -87,8 +92,8 @@ def write_architecture_artifacts(directory="."):
     for name,spec in DEFAULT_AUTHORITIES.items(): authmd.append("| {} | {} | {} | {} |".format(name,spec["authority"],spec["implementation"],spec["role"]));
     authmd += ["","SUMTAB is a native SUM format. Type, schema and index-definition authority remains above individual language runtimes.","","<p align=center><b>- oOo -</b></p>"];
     (out/"SUM_AUTHORITIES.md").write_text("\n".join(authmd)+"\n",encoding="utf-8");
-    columns=[["sumCore","sumFSA","sumUI"],["sumData","sumIO","sumTUI","sumGUI"],["sumPlot","sumPY","sumR","sumIDE","sumbash","sumTerminal"],["sumBASIC","sumX","sumdiff","sumdoc","sumbuild","sumKeyboard"]];
-    coords={}; width=1120; height=660;
+    columns=[["sumCore","sumUtilsRuntime","sumUtils","sumFSA","sumUI"],["sumData","sumIO","sumTUI","sumGUI"],["sumPlot","sumPY","sumR","sumIDE","sumbash","sumTerminal"],["sumBASIC","sumX","sumdiff","sumdoc","sumbuild","sumKeyboard"]];
+    coords={}; width=1120; height=690;
     for ci,column in enumerate(columns):
         for ri,name in enumerate(column): coords[name]=(50+ci*270,40+ri*95);
     svg=[f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">','<rect width="100%" height="100%" fill="white"/>'];

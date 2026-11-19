@@ -139,4 +139,8 @@ Every common help entry carries an example and `help_topics()` returns function 
 
 The common SUMTAB codec is now located in `sumcore.sumtab`. The previous path, `sumdoc.sumtab`, still reexports to preserve compatibility. `sumcore.sumx_interchange` is an experimental adapter for sumX's native SQLite databases.
 
+## 0.1.0a25 utility/runtime authorities
+
+The architecture registry now distinguishes `sumUtils` (SUM-aware facade) from `SumUtilsRuntime` (portable host-language adaptation layer). `SumUtilsRuntime` has no SUM dependencies. The registry also defines `sum.blocks/1` for native copy/paste serialization envelopes and `sum.angle/1` for the mathematical angular convention owned by sumPlot.
+
 <p align=center><b>- oOo -</b></p>
